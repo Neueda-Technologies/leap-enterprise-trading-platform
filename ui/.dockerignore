@@ -1,0 +1,11 @@
+node_modules
+dist
+out-tsc
+.angular
+.git
+.vscode
+playwright-report
+test-results
+README.md
+Dockerfile
+.dockerignore

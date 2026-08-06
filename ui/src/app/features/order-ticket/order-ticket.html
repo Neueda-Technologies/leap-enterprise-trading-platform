@@ -1,0 +1,234 @@
+<main class="page ticket-page">
+  <header class="page-header">
+    <h1>Order ticket</h1>
+    <div class="button-row">
+      <a class="button secondary" routerLink="/dashboard">Dashboard</a>
+      <a class="button secondary" routerLink="/orders">Order history</a>
+    </div>
+  </header>
+
+  @if (error(); as message) {
+    <div class="alert alert-error" role="alert" data-testid="ticket-error">
+      <p>{{ message }}</p>
+    </div>
+  }
+
+  <section class="card">
+    <h2>Account</h2>
+    <div class="field">
+      <label for="account">Trading account</label>
+      <input
+        id="account"
+        type="text"
+        readonly
+        data-testid="account-field"
+        [value]="account() ? account()!.holderName + ' (' + account()!.accountId + ')' : 'Loading'"
+      />
+      <p class="field-hint">
+        Read-only. The account comes from your signed-in session. The Trade REST API rejects an
+        order whose account does not match the token's <code>accountId</code> claim.
+      </p>
+    </div>
+    @if (account(); as detail) {
+      <p class="muted small">
+        Available cash <span class="numeric">{{ detail.cashBalance | number: '1.2-2' }}</span
+        >. A buy costing more than this is rejected with ORD-400.
+      </p>
+    }
+  </section>
+
+  <section class="card">
+    <h2>New order</h2>
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="ticket-grid">
+        <div class="field">
+          <label for="symbol">Symbol</label>
+          <input
+            id="symbol"
+            type="text"
+            autocomplete="off"
+            placeholder="ACME"
+            formControlName="symbol"
+            data-testid="symbol"
+            [class.invalid]="form.controls.symbol.touched && form.controls.symbol.invalid"
+          />
+          @if (form.controls.symbol.touched && form.controls.symbol.invalid) {
+            <p class="field-error" data-testid="symbol-error">
+              @if (form.controls.symbol.hasError('required')) {
+                Enter an instrument symbol.
+              } @else if (form.controls.symbol.hasError('maxlength')) {
+                A symbol is at most 20 characters.
+              } @else {
+                Use letters, digits and the characters . : _ - only.
+              }
+            </p>
+          }
+          <p class="field-hint">ACME, AAPL, INFY.NS, FX:EURUSD</p>
+        </div>
+
+        <div class="field">
+          <label for="side">Side</label>
+          <select id="side" formControlName="side" data-testid="side">
+            <option value="BUY">BUY</option>
+            <option value="SELL">SELL</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="quantity">Quantity</label>
+          <input
+            id="quantity"
+            type="number"
+            step="1"
+            min="1"
+            formControlName="quantity"
+            data-testid="quantity"
+            [class.invalid]="form.controls.quantity.touched && form.controls.quantity.invalid"
+          />
+          @if (form.controls.quantity.touched && form.controls.quantity.invalid) {
+            <p class="field-error" data-testid="quantity-error">
+              @if (form.controls.quantity.hasError('required')) {
+                Enter a quantity.
+              } @else if (form.controls.quantity.hasError('wholeNumber')) {
+                Quantity is in whole units.
+              } @else if (form.controls.quantity.hasError('max')) {
+                That quantity is above the limit the API accepts.
+              } @else {
+                Quantity must be greater than zero.
+              }
+            </p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="price">Limit price</label>
+          <input
+            id="price"
+            type="number"
+            step="0.01"
+            min="0.01"
+            formControlName="price"
+            data-testid="price"
+            [class.invalid]="form.controls.price.touched && form.controls.price.invalid"
+          />
+          @if (form.controls.price.touched && form.controls.price.invalid) {
+            <p class="field-error" data-testid="price-error">
+              @if (form.controls.price.hasError('required')) {
+                Enter a price.
+              } @else if (form.controls.price.hasError('maxDecimalPlaces')) {
+                Prices carry at most two decimal places.
+              } @else {
+                Price must be greater than zero.
+              }
+            </p>
+          }
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button type="submit" [disabled]="busy()" data-testid="submit-order">
+          {{ phase() === 'submitting' ? 'Sending' : 'Submit order' }}
+        </button>
+        @if (phase() === 'settled' || phase() === 'timedOut') {
+          <button type="button" class="secondary" (click)="reset()" data-testid="new-order">
+            New order
+          </button>
+        }
+      </div>
+    </form>
+  </section>
+
+  @if (placed(); as order) {
+    <section
+      class="card result"
+      data-testid="order-result"
+      [attr.data-status]="status()"
+      aria-live="polite"
+    >
+      @switch (phase()) {
+        @case ('pending') {
+          <div class="alert alert-pending">
+            <h3>Order accepted, status NEW</h3>
+            <p>
+              The Trade REST API has recorded {{ order.orderId }} and published it to the
+              <code>orders</code> topic. The Trade Executor prices it against a live quote and
+              writes the fill. Checking order history until the status changes.
+            </p>
+          </div>
+        }
+        @case ('timedOut') {
+          <div class="alert alert-info">
+            <h3>Still working</h3>
+            <p>
+              {{ order.orderId }} is recorded and has not settled yet. Nothing is lost. Open order
+              history to see the outcome when the executor has written it.
+            </p>
+          </div>
+        }
+        @default {
+          <div
+            class="alert"
+            [class.alert-success]="status() === 'FILLED'"
+            [class.alert-error]="status() === 'REJECTED'"
+            [class.alert-info]="status() === 'CANCELLED'"
+          >
+            <h3>Order {{ (status() ?? '').toLowerCase() }}</h3>
+            @if (resolved(); as entry) {
+              <!-- The status came from order history, so the POST message is out of date. -->
+              @if (entry.status === 'FILLED') {
+                <p>
+                  The Trade Executor filled {{ entry.quantity }} {{ entry.symbol }} at
+                  {{ entry.executedPrice ?? entry.price | number: '1.2-2' }}.
+                </p>
+              } @else {
+                <p>
+                  The Trade Executor did not fill this order. It stays in the audit trail, and it is
+                  on the blotter.
+                </p>
+              }
+            } @else {
+              <p>{{ order.message }}</p>
+            }
+          </div>
+        }
+      }
+
+      <dl class="result-detail">
+        <div>
+          <dt>Order</dt>
+          <dd class="numeric">{{ order.orderId }}</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>
+            <span [class]="'badge badge-' + (status() ?? '').toLowerCase()">{{ status() }}</span>
+          </dd>
+        </div>
+        <div>
+          <dt>Instrument</dt>
+          <dd>{{ order.symbol }}</dd>
+        </div>
+        <div>
+          <dt>Side</dt>
+          <dd [class.side-buy]="order.side === 'BUY'" [class.side-sell]="order.side === 'SELL'">
+            {{ order.side }}
+          </dd>
+        </div>
+        <div>
+          <dt>Quantity</dt>
+          <dd class="numeric">{{ order.quantity }}</dd>
+        </div>
+        <div>
+          <dt>Limit price</dt>
+          <dd class="numeric">{{ order.price }}</dd>
+        </div>
+        @if (resolved()?.executedPrice; as executed) {
+          <div>
+            <dt>Executed at</dt>
+            <dd class="numeric">{{ executed }}</dd>
+          </div>
+        }
+      </dl>
+    </section>
+  }
+</main>

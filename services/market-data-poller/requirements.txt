@@ -1,0 +1,4 @@
+# Runtime dependencies. Test-only dependencies live in requirements-dev.txt so that the image does
+# not carry pytest.
+requests>=2.32,<3
+kafka-python>=3.0,<4

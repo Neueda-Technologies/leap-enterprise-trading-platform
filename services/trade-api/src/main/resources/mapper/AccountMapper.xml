@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  accounts.
+
+  The result map uses <constructor> because Account has no no-argument constructor and no setters.
+  That is not an accident of style: an account whose balance can be set from outside the entity has
+  no invariant left to protect, and debit and credit stop being the only two ways money moves.
+  Mapping through the constructor costs one verbose block here and keeps the domain honest.
+
+  snake_case in SQL, camelCase in Java. The translation happens here, in one place.
+-->
+<mapper namespace="com.tradingplatform.tradeapi.repository.AccountMapper">
+
+  <resultMap id="accountResult" type="com.tradingplatform.domain.model.Account">
+    <constructor>
+      <idArg column="id"           javaType="java.lang.Long"/>
+      <arg   column="account_id"   javaType="java.lang.String"/>
+      <arg   column="holder_name"  javaType="java.lang.String"/>
+      <arg   column="cash_balance" javaType="java.math.BigDecimal"/>
+      <arg   column="status"       javaType="com.tradingplatform.domain.model.AccountStatus"/>
+      <arg   column="version"      javaType="_int"/>
+      <arg   column="last_updated" javaType="java.time.Instant"/>
+    </constructor>
+  </resultMap>
+
+  <select id="findById" resultMap="accountResult">
+    SELECT id,
+           account_id,
+           holder_name,
+           cash_balance,
+           status,
+           version,
+           last_updated
+      FROM accounts
+     WHERE id = #{id}
+  </select>
+
+  <!--
+    The optimistic lock, NFR-02.
+
+    version = version + 1 is computed by the database, and the WHERE clause pins the value the row
+    held when it was read. Two transactions that read version 7 both try to write version 8; the
+    database serialises them, the first affects one row and the second affects none. The second
+    caller must not treat that as success, which is why the mapper returns the count and the service
+    checks it.
+
+    Reading the row, computing the new balance in Java, and writing it back without the version
+    predicate loses one of the two updates silently. That failure has no error, no log line and no
+    symptom until somebody reconciles the cash.
+  -->
+  <update id="updateCashBalance">
+    UPDATE accounts
+       SET cash_balance = #{cashBalance},
+           version      = version + 1,
+           last_updated = #{lastUpdated}
+     WHERE id      = #{id}
+       AND version = #{expectedVersion}
+  </update>
+
+</mapper>

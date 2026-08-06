@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  positions. Net holding per account and instrument, keyed on both.
+-->
+<mapper namespace="com.tradingplatform.tradeapi.repository.PositionMapper">
+
+  <resultMap id="positionResult" type="com.tradingplatform.domain.model.Position">
+    <constructor>
+      <idArg column="account_id"   javaType="java.lang.Long"/>
+      <idArg column="symbol"       javaType="java.lang.String"/>
+      <arg   column="quantity"     javaType="_int"/>
+      <arg   column="average_cost" javaType="java.math.BigDecimal"/>
+    </constructor>
+  </resultMap>
+
+  <select id="find" resultMap="positionResult">
+    SELECT account_id, symbol, quantity, average_cost
+      FROM positions
+     WHERE account_id = #{accountId}
+       AND symbol     = #{symbol}
+  </select>
+
+  <!--
+    A position sold down to zero is kept in the table but not returned by the API. The row still
+    carries the average cost that a later buy folds into its weighted average.
+
+    Served by pk_positions, which leads on account_id. No separate index is needed and none exists.
+  -->
+  <select id="findByAccount" resultMap="positionResult">
+    SELECT account_id, symbol, quantity, average_cost
+      FROM positions
+     WHERE account_id = #{accountId}
+       AND quantity &gt; 0
+     ORDER BY symbol
+  </select>
+
+  <!--
+    One statement, not a select followed by a branch. ON CONFLICT resolves against the composite
+    primary key inside the database, so two concurrent fills on the same account and symbol are
+    serialised by the row lock rather than by hope.
+
+    This is the statement that runs in every real environment. MyBatis is not an abstraction over
+    dialects and the mapper is allowed to know which database it is writing to.
+  -->
+  <insert id="upsert" databaseId="postgresql">
+    INSERT INTO positions (account_id, symbol, quantity, average_cost)
+    VALUES (#{accountId}, #{symbol}, #{quantity}, #{averageCost})
+    ON CONFLICT (account_id, symbol)
+    DO UPDATE SET quantity     = EXCLUDED.quantity,
+                  average_cost = EXCLUDED.average_cost
+  </insert>
+
+  <!--
+    The same operation in H2, which has no ON CONFLICT ... DO UPDATE. It exists so that
+    MapperIntegrationTest can prove the upsert behaves, in a second, without Docker. It runs nowhere
+    else. See config/MyBatisConfig for why this is preferred to writing one portable but racy
+    statement.
+  -->
+  <insert id="upsert" databaseId="h2">
+    MERGE INTO positions (account_id, symbol, quantity, average_cost)
+    KEY (account_id, symbol)
+    VALUES (#{accountId}, #{symbol}, #{quantity}, #{averageCost})
+  </insert>
+
+  <!-- Fallback for any other vendor. Never reached in this platform. -->
+  <insert id="upsert">
+    INSERT INTO positions (account_id, symbol, quantity, average_cost)
+    VALUES (#{accountId}, #{symbol}, #{quantity}, #{averageCost})
+    ON CONFLICT (account_id, symbol)
+    DO UPDATE SET quantity     = EXCLUDED.quantity,
+                  average_cost = EXCLUDED.average_cost
+  </insert>
+
+</mapper>

@@ -1,0 +1,17 @@
+{
+  "name": "auth-stub",
+  "version": "1.0.0",
+  "description": "Provided Sprint 6 auth stub. Issues test JWTs with the Enterprise Trading Platform claims contract. Retired in Sprint 8.",
+  "private": true,
+  "license": "UNLICENSED",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test \"test/*.test.js\""
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

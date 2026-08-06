@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.tradingplatform</groupId>
+  <artifactId>trading-engine</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+
+  <name>Trading domain engine</name>
+  <description>
+    Sprint 5 deliverable. Entities, enumerations, DTOs, the exception hierarchy and the buy and sell
+    rules for the Enterprise Trading Platform. No database access, no HTTP, no Spring.
+  </description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>21</maven.compiler.release>
+    <junit.version>5.14.4</junit.version>
+    <jakarta.validation.version>3.0.2</jakarta.validation.version>
+    <hibernate.validator.version>8.0.5.Final</hibernate.validator.version>
+    <expressly.version>5.0.0</expressly.version>
+    <surefire.version>3.5.4</surefire.version>
+  </properties>
+
+  <dependencies>
+
+    <!--
+      The only compile dependency. The architecture allows validation annotations in the domain and
+      nothing else: no Spring, no JDBC driver, no HTTP client. If this list grows, the domain has
+      stopped being a domain.
+    -->
+    <dependency>
+      <groupId>jakarta.validation</groupId>
+      <artifactId>jakarta.validation-api</artifactId>
+      <version>${jakarta.validation.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- A validation implementation, needed only to run PlaceOrderRequestValidationTest. -->
+    <dependency>
+      <groupId>org.hibernate.validator</groupId>
+      <artifactId>hibernate-validator</artifactId>
+      <version>${hibernate.validator.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.expressly</groupId>
+      <artifactId>expressly</artifactId>
+      <version>${expressly.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire.version}</version>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

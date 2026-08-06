@@ -1,0 +1,69 @@
+name: Deploy UI
+
+# Manual deploy of the Angular build to S3 and CloudFront, per Sprint 11.
+# See deploy/README.md for how this fits against deploy/deploy-ui.sh, and
+# deploy/setup-aws.md for how the bucket, the distribution and the deploy
+# user referenced below are created.
+#
+# This workflow never runs automatically. A human triggers it from the
+# Actions tab and chooses the ref to deploy.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: print the plan, sync with --dryrun, skip the CloudFront invalidation"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  # Only one deploy of the UI at a time. A second dispatch while one is
+  # running queues behind it rather than racing it for the same bucket.
+  group: deploy-ui
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy Angular UI
+    runs-on: ubuntu-latest
+
+    # Environment protection: this job targets the "production" GitHub
+    # Environment. Configure required reviewers on that environment in
+    # Settings > Environments so a human approves the run before the AWS
+    # credentials below are released to it. The environment also scopes
+    # the secrets and variables to this workflow: they are not readable
+    # from ci.yml or from a workflow running on an unreviewed branch.
+    environment: production
+
+    steps:
+      - name: Check out the ref to deploy
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # Scoped to exactly this bucket and this distribution. See
+          # deploy/iam/deploy-policy.json for the policy attached to this
+          # user, and deploy/setup-aws.md, step 6, for how it was created.
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Deploy
+        run: |
+          chmod +x deploy/deploy-ui.sh
+          deploy/deploy-ui.sh \
+            --bucket "${{ vars.DEPLOY_BUCKET }}" \
+            --distribution-id "${{ vars.DEPLOY_DISTRIBUTION_ID }}" \
+            --region "${{ vars.AWS_REGION }}" \
+            ${{ inputs.dry_run && '--dry-run' || '' }}

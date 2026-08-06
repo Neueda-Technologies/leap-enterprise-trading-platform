@@ -1,0 +1,12 @@
+/* One narrow column, pushed away from the top of the viewport. */
+.login-page {
+  max-width: 420px;
+}
+
+.login-page .card {
+  margin-top: 8vh;
+}
+
+.login-page button[type='submit'] {
+  width: 100%;
+}

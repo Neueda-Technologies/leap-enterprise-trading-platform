@@ -1,0 +1,67 @@
+<main class="page">
+  <header class="page-header">
+    <div>
+      <h1 data-testid="welcome-banner">Welcome, {{ account()?.holderName ?? 'trader' }}</h1>
+      <p class="muted small">
+        @if (account(); as detail) {
+          Account {{ detail.accountId }}, status {{ detail.status }}
+        } @else {
+          Loading your account
+        }
+      </p>
+    </div>
+
+    <div class="button-row">
+      <a class="button" routerLink="/orders/new" data-testid="go-order-ticket">Place an order</a>
+      <a class="button secondary" routerLink="/orders" data-testid="go-blotter">Order history</a>
+      <button type="button" class="secondary" (click)="logout()" data-testid="logout">
+        Log out
+      </button>
+    </div>
+  </header>
+
+  @if (error(); as message) {
+    <div class="alert alert-error" role="alert" data-testid="dashboard-error">
+      <p>{{ message }}</p>
+      <p class="small">
+        <button type="button" class="secondary" (click)="load()">Try again</button>
+      </p>
+    </div>
+  }
+
+  <section class="card balance-card" data-testid="balance-card">
+    <h2>Cash balance</h2>
+    @if (balance(); as cash) {
+      <p class="balance-amount numeric" data-testid="balance-amount">
+        {{ cash.cashBalance | currency: cash.currency : 'symbol' : '1.2-2' }}
+      </p>
+      <p class="muted small">
+        Available cash as at {{ cash.asOf | date: 'medium' }}. Holdings are not valued here: market
+        valuation is the Portfolio and P&amp;L extension.
+      </p>
+    } @else if (loading()) {
+      <p class="muted">Loading</p>
+    }
+  </section>
+
+  <section class="card" data-testid="positions-card">
+    <h2>Positions</h2>
+    @if (positions().length) {
+      <ul class="position-list">
+        @for (position of positions(); track position.symbol) {
+          <li class="position">
+            <span class="position-symbol">{{ position.symbol }}</span>
+            <span class="numeric">{{ position.quantity | number }} units</span>
+            <span class="numeric muted">
+              average cost {{ position.averageCost | number: '1.2-2' }}
+            </span>
+          </li>
+        }
+      </ul>
+    } @else if (!loading()) {
+      <p class="muted">No open positions. A filled buy order will appear here.</p>
+    } @else {
+      <p class="muted">Loading</p>
+    }
+  </section>
+</main>

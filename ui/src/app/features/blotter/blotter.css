@@ -1,0 +1,32 @@
+.blotter-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-end;
+  margin-bottom: var(--space-4);
+}
+
+.blotter-toolbar .field {
+  margin-bottom: 0;
+  min-width: 10rem;
+}
+
+/*
+ * A UUID is 36 characters and would push the status column off the right-hand edge on a
+ * laptop. Truncate it and keep the whole value in the title attribute.
+ */
+.order-id {
+  max-width: 13rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Present for screen readers, absent from the layout. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

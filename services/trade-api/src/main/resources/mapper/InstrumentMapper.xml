@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  instruments. Reference data. This service reads it and never writes it, and the application role
+  holds SELECT on this table and nothing else.
+-->
+<mapper namespace="com.tradingplatform.tradeapi.repository.InstrumentMapper">
+
+  <resultMap id="instrumentResult" type="com.tradingplatform.domain.model.Instrument">
+    <constructor>
+      <idArg column="symbol"      javaType="java.lang.String"/>
+      <arg   column="name"        javaType="java.lang.String"/>
+      <arg   column="asset_class" javaType="java.lang.String"/>
+      <arg   column="currency"    javaType="java.lang.String"/>
+      <arg   column="tradable"    javaType="_boolean"/>
+    </constructor>
+  </resultMap>
+
+  <!--
+    No filter on tradable. Business rule 3 belongs to the domain, and a WHERE clause here would hide
+    it in a file nobody reads when they are looking for a rule.
+  -->
+  <select id="findBySymbol" resultMap="instrumentResult">
+    SELECT symbol,
+           name,
+           asset_class,
+           currency,
+           tradable
+      FROM instruments
+     WHERE symbol = #{symbol}
+  </select>
+
+</mapper>

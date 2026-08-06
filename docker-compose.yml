@@ -1,0 +1,325 @@
+# Enterprise Trading Platform, local infrastructure and services.
+#
+# `docker compose up` on its own starts infrastructure only: postgres and
+# kafka. That is deliberate. Sprint 3 and Sprint 7 work against a database
+# and a broker before any service exists to put in front of them.
+#
+# `docker compose --profile platform up` starts everything: the two
+# infrastructure services plus the Trade REST API, the auth service, the
+# auth stub, the Trade Executor, the market-data poller and the Portfolio
+# and P&L service. See infra/README.md for what each one needs, which ports
+# they listen on, and how to bring up a partial stack for one sprint's work.
+#
+# Environment variables are read from .env at the repository root. Copy
+# .env.example to .env before running anything here.
+
+networks:
+  trading-net:
+    name: trading-net
+
+volumes:
+  postgres-data:
+  kafka-data:
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Infrastructure. No profile: always included.
+  # ---------------------------------------------------------------------------
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    networks: [trading-net]
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-trading}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev_password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  # Single-broker Kafka in KRaft mode: combined broker and controller, no
+  # ZooKeeper. 9092 is the address the host and any tool outside compose
+  # use. 29092 is the address services inside the compose network use,
+  # matching the split documented in docs/ARCHITECTURE.md.
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: kafka
+    networks: [trading-net]
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:29092,CONTROLLER://:29093,PLAINTEXT_HOST://:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+  # One-shot topic creation. Runs infra/kafka/create-topics.sh once the
+  # broker is healthy, then exits. Auto-creation is switched off above
+  # because it silently produces a one-partition, default-retention topic,
+  # which is wrong for all three topics this platform uses.
+  kafka-init:
+    image: apache/kafka:3.8.0
+    container_name: kafka-init
+    networks: [trading-net]
+    depends_on:
+      kafka:
+        condition: service_healthy
+    volumes:
+      - ./infra/kafka/create-topics.sh:/kafka-scripts/create-topics.sh:ro
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    entrypoint: ["bash", "/kafka-scripts/create-topics.sh"]
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
+  # Platform services. Profile "platform": included only when asked for.
+  #
+  # Build contexts point at services/ and extensions/ directories owned by
+  # other tracks of this build and are not present at the time this compose
+  # file was written. `docker compose config` validates the file's shape
+  # without needing the contexts to exist; `docker compose --profile
+  # platform up` needs them present with a Dockerfile before it can build.
+  # ---------------------------------------------------------------------------
+
+  trade-api:
+    build:
+      context: ./services/trade-api
+    container_name: trade-api
+    profiles: [platform]
+    networks: [trading-net]
+    ports:
+      - "8080:8080"
+    environment:
+      SERVER_PORT: 8080
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-trading}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-trading}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_USERNAME: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev_password}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/8080' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+  # NestJS auth service, Sprint 8 onwards. Owns the credential store. Issues
+  # and verifies JWTs with the same claims contract as auth-stub, so the
+  # Trade REST API and the Portfolio and P&L service do not care which of
+  # the two signed a given token, only that JWT_SECRET matches.
+  auth-service:
+    build:
+      context: ./services/auth-service
+    container_name: auth-service
+    profiles: [platform]
+    networks: [trading-net]
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_dev_password}@postgres:5432/${POSTGRES_DB:-trading}
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: ${POSTGRES_DB:-trading}
+      PGUSER: ${POSTGRES_USER:-postgres}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres_dev_password}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-trading}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev_password}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/3000' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  # Node auth stub, Sprints 6 and 7 only. Issues test JWTs with the same
+  # claims as auth-service so the Trade REST API can be built and tested
+  # against real JWT validation before Node is taught. Exposed on a
+  # different host port to auth-service so both can run side by side; only
+  # one is normally the token issuer a given sprint's services point at.
+  # See docs/DECISIONS.md, decision 5.
+  auth-stub:
+    build:
+      context: ./services/auth-stub
+    container_name: auth-stub
+    profiles: [platform]
+    networks: [trading-net]
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      JWT_SECRET: ${JWT_SECRET}
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/3001' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+  # Kafka consumer group "trade-executor". Consumes orders, prices against a
+  # live Fauxnance quote, fills or rejects, writes order, cash and position
+  # atomically, publishes to trade-events. No inbound port in the API
+  # contract; the health endpoint is documented in ARCHITECTURE.md.
+  trade-executor:
+    build:
+      context: ./services/trade-executor
+    container_name: trade-executor
+    profiles: [platform]
+    networks: [trading-net]
+    ports:
+      - "8082:8082"
+    environment:
+      PORT: 8082
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-trading}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_dev_password}@postgres:5432/${POSTGRES_DB:-trading}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-trading}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_USERNAME: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev_password}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
+      KAFKA_CONSUMER_GROUP: trade-executor
+      FAUXNANCE_BASE_URL: ${FAUXNANCE_BASE_URL}
+      FAUXNANCE_API_KEY: ${FAUXNANCE_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/8082' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  # Polls Fauxnance on an interval for held and watched symbols, publishes
+  # one message per symbol to market-data. Has no database dependency: it
+  # only reads Fauxnance and writes Kafka.
+  market-data-poller:
+    build:
+      context: ./services/market-data-poller
+    container_name: market-data-poller
+    profiles: [platform]
+    networks: [trading-net]
+    ports:
+      - "8083:8083"
+    environment:
+      PORT: 8083
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
+      FAUXNANCE_BASE_URL: ${FAUXNANCE_BASE_URL}
+      FAUXNANCE_API_KEY: ${FAUXNANCE_API_KEY}
+      POLL_INTERVAL_SECONDS: ${POLL_INTERVAL_SECONDS:-30}
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/8083' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  # Portfolio and P&L extension. Service name matches the hostname assumed
+  # by docs/contracts/portfolio-api.yaml: portfolio-service. Reads positions
+  # from postgres, prices them from Fauxnance, reads cash balance from the
+  # Trade REST API, and verifies the platform JWT itself rather than
+  # trusting an upstream to have done so.
+  portfolio-service:
+    build:
+      context: ./extensions/portfolio-pnl
+    container_name: portfolio-service
+    profiles: [platform]
+    networks: [trading-net]
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: 8081
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-trading}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_dev_password}@postgres:5432/${POSTGRES_DB:-trading}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-trading}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_USERNAME: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev_password}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:29092}
+      KAFKA_CONSUMER_GROUP: portfolio-service
+      FAUXNANCE_BASE_URL: ${FAUXNANCE_BASE_URL}
+      FAUXNANCE_API_KEY: ${FAUXNANCE_API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      TRADE_API_BASE_URL: http://trade-api:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+      trade-api:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/8081' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped

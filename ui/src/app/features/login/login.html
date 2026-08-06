@@ -1,0 +1,46 @@
+<main class="page login-page">
+  <div class="card">
+    <h1>Enterprise Trading Platform</h1>
+    <p class="muted small">Sign in to place orders and review your account.</p>
+
+    @if (error(); as message) {
+      <div class="alert alert-error" role="alert" data-testid="login-error">
+        <p>{{ message }}</p>
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="field">
+        <label for="username">Username</label>
+        <input
+          id="username"
+          type="text"
+          autocomplete="username"
+          formControlName="username"
+          [class.invalid]="form.controls.username.touched && form.controls.username.invalid"
+        />
+        @if (form.controls.username.touched && form.controls.username.hasError('required')) {
+          <p class="field-error">Enter your username.</p>
+        }
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          autocomplete="current-password"
+          formControlName="password"
+          [class.invalid]="form.controls.password.touched && form.controls.password.invalid"
+        />
+        @if (form.controls.password.touched && form.controls.password.hasError('required')) {
+          <p class="field-error">Enter your password.</p>
+        }
+      </div>
+
+      <button type="submit" [disabled]="submitting()" data-testid="login-submit">
+        {{ submitting() ? 'Signing in' : 'Sign in' }}
+      </button>
+    </form>
+  </div>
+</main>

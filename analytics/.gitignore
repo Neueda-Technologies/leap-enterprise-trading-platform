@@ -1,0 +1,7 @@
+.pytest_cache/
+.coverage
+htmlcov/
+*.duckdb
+*.duckdb.wal
+report.html
+.env

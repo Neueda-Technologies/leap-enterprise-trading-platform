@@ -1,0 +1,88 @@
+<main class="page">
+  <header class="page-header">
+    <div>
+      <h1>Order history</h1>
+      <p class="muted small">Every order on this account, newest first, including rejections.</p>
+    </div>
+    <div class="button-row">
+      <a class="button" routerLink="/orders/new">Place an order</a>
+      <a class="button secondary" routerLink="/dashboard">Dashboard</a>
+    </div>
+  </header>
+
+  @if (error(); as message) {
+    <div class="alert alert-error" role="alert" data-testid="blotter-error">
+      <p>{{ message }}</p>
+    </div>
+  }
+
+  <section class="card">
+    <div class="blotter-toolbar">
+      <div class="field">
+        <label for="status-filter">Status</label>
+        <select
+          id="status-filter"
+          data-testid="status-filter"
+          [value]="statusFilter()"
+          (change)="onStatusChange($any($event.target).value)"
+        >
+          <option value="">All</option>
+          @for (status of statuses; track status) {
+            <option [value]="status">{{ status }}</option>
+          }
+        </select>
+      </div>
+      <button type="button" class="secondary" (click)="load()" data-testid="refresh">
+        Refresh
+      </button>
+    </div>
+
+    <div class="table-wrapper">
+      <table data-testid="blotter-table">
+        <caption class="visually-hidden">
+          Order history
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Order</th>
+            <th scope="col">Symbol</th>
+            <th scope="col">Side</th>
+            <th scope="col" class="right">Quantity</th>
+            <th scope="col" class="right">Limit price</th>
+            <th scope="col" class="right">Executed</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (entry of entries(); track entry.orderId) {
+            <tr [attr.data-symbol]="entry.symbol">
+              <td>{{ entry.createdOn | date: 'dd MMM yyyy HH:mm' }}</td>
+              <td class="numeric small order-id" [title]="entry.orderId">{{ entry.orderId }}</td>
+              <td>{{ entry.symbol }}</td>
+              <td [class]="entry.side === 'BUY' ? 'side-buy' : 'side-sell'">{{ entry.side }}</td>
+              <td class="right numeric">{{ entry.quantity | number }}</td>
+              <td class="right numeric">{{ entry.price | number: '1.2-2' }}</td>
+              <td class="right numeric">
+                {{ entry.executedPrice ? (entry.executedPrice | number: '1.2-2') : '-' }}
+              </td>
+              <td>
+                <span [class]="badgeClass(entry.status)">{{ entry.status }}</span>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="8" class="empty">
+                @if (loading()) {
+                  Loading orders
+                } @else {
+                  No orders yet. Place one from the order ticket.
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>

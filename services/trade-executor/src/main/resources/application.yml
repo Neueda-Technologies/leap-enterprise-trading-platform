@@ -1,0 +1,88 @@
+spring:
+  application:
+    name: trade-executor
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/trading}
+    username: ${DB_USERNAME:trading_app}
+    password: ${DB_PASSWORD:}
+    hikari:
+      # One connection per listener thread, plus headroom for the health check.
+      maximum-pool-size: ${DB_POOL_SIZE:5}
+      auto-commit: false
+
+  jackson:
+    # The contract shows "reason": null on a fill. A consumer that expects the key to be present
+    # must find it, so nulls are written rather than dropped.
+    default-property-inclusion: always
+    serialization:
+      write-dates-as-timestamps: false
+      write-bigdecimal-as-plain: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      # Explicit, per the topic contract. Two services sharing a group identifier split the
+      # partitions between them and each sees only part of the stream.
+      group-id: trade-executor
+      auto-offset-reset: earliest
+      # Offsets are committed by the listener after the database commit and the publish.
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      max-poll-records: 10
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 10
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+    listener:
+      # The listener calls acknowledge() itself, after the work is done.
+      ack-mode: manual_immediate
+      # One thread per partition on a three-partition topic. More threads than partitions leaves
+      # the extra threads idle.
+      concurrency: 3
+      missing-topics-fatal: false
+
+server:
+  port: 8082
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+executor:
+  topics:
+    orders: ${ORDERS_TOPIC:orders}
+    trade-events: ${TRADE_EVENTS_TOPIC:trade-events}
+    dead-letter-suffix: .DLT
+  max-delivery-attempts: ${MAX_DELIVERY_ATTEMPTS:4}
+  latency:
+    min: ${EXECUTION_LATENCY_MIN:250ms}
+    max: ${EXECUTION_LATENCY_MAX:750ms}
+  optimistic-lock:
+    max-attempts: 5
+    backoff: 25ms
+
+fauxnance:
+  base-url: ${FAUXNANCE_BASE_URL:https://y4t9nq2bqf.execute-api.eu-west-2.amazonaws.com/v1}
+  api-key: ${FAUXNANCE_API_KEY:}
+  quote-max-age: ${QUOTE_MAX_AGE:5s}
+  connect-timeout: 2s
+  read-timeout: 3s
+  max-attempts: 3
+  retry-backoff: 200ms
+
+logging:
+  level:
+    com.neueda.trading.executor: INFO
+    org.apache.kafka: WARN

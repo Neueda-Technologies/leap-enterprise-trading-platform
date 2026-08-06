@@ -1,0 +1,350 @@
+/*
+ * Global stylesheet.
+ *
+ * There is no component library here on purpose. Every rule below is plain CSS that a
+ * participant can read, change and explain. Shared vocabulary lives in this file: colours,
+ * spacing, cards, forms, buttons, alerts, badges and tables. Component stylesheets hold
+ * layout for one screen only.
+ *
+ * Colour is never the only signal. BUY and SELL are green and red, and they also carry the
+ * word, because roughly one man in twelve cannot separate those two hues.
+ */
+
+:root {
+  /* Neutrals */
+  --colour-page: #f4f6f8;
+  --colour-surface: #ffffff;
+  --colour-border: #d8dee5;
+  --colour-text: #14232e;
+  --colour-text-muted: #5b6b78;
+
+  /* Accents */
+  --colour-brand: #0f4c81;
+  --colour-brand-dark: #0b3a63;
+  --colour-buy: #1a7f4b;
+  --colour-buy-soft: #e4f3ea;
+  --colour-sell: #b3261e;
+  --colour-sell-soft: #fbe9e7;
+  --colour-warn: #8a5a00;
+  --colour-warn-soft: #fdf3e2;
+  --colour-info-soft: #e8f0f7;
+
+  /* Spacing and shape */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --radius: 6px;
+  --shadow: 0 1px 3px rgb(20 35 46 / 12%);
+
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-numeric: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--colour-page);
+  color: var(--colour-text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0 0 var(--space-3);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+
+h2 {
+  font-size: 1.125rem;
+}
+
+h3 {
+  font-size: 1rem;
+}
+
+/* Layout ------------------------------------------------------------------ */
+
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-5);
+}
+
+.card {
+  background: var(--colour-surface);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space-5);
+}
+
+.card + .card {
+  margin-top: var(--space-4);
+}
+
+.muted {
+  color: var(--colour-text-muted);
+}
+
+.small {
+  font-size: 0.875rem;
+}
+
+.numeric {
+  font-family: var(--font-numeric);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Forms ------------------------------------------------------------------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
+.field label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.field input,
+.field select {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  background: var(--colour-surface);
+  color: inherit;
+  font: inherit;
+}
+
+.field input:focus-visible,
+.field select:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--colour-brand);
+  outline-offset: 2px;
+}
+
+.field input[readonly] {
+  background: var(--colour-page);
+  color: var(--colour-text-muted);
+}
+
+.field input.invalid,
+.field select.invalid {
+  border-color: var(--colour-sell);
+}
+
+.field-error {
+  font-size: 0.8125rem;
+  color: var(--colour-sell);
+}
+
+.field-hint {
+  font-size: 0.8125rem;
+  color: var(--colour-text-muted);
+}
+
+/* Buttons ----------------------------------------------------------------- */
+
+button,
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--colour-brand);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled),
+.button:hover {
+  background: var(--colour-brand-dark);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+button.secondary,
+.button.secondary {
+  background: var(--colour-surface);
+  border-color: var(--colour-border);
+  color: var(--colour-text);
+}
+
+button.secondary:hover:not(:disabled),
+.button.secondary:hover {
+  background: var(--colour-page);
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* Alerts ------------------------------------------------------------------ */
+
+.alert {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--colour-border);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  margin-bottom: var(--space-4);
+}
+
+.alert-error {
+  border-left-color: var(--colour-sell);
+  background: var(--colour-sell-soft);
+}
+
+.alert-success {
+  border-left-color: var(--colour-buy);
+  background: var(--colour-buy-soft);
+}
+
+.alert-pending {
+  border-left-color: var(--colour-warn);
+  background: var(--colour-warn-soft);
+}
+
+.alert-info {
+  border-left-color: var(--colour-brand);
+  background: var(--colour-info-soft);
+}
+
+.alert h3 {
+  margin-bottom: var(--space-1);
+}
+
+.alert p {
+  margin: 0;
+}
+
+/* Side and status ---------------------------------------------------------- */
+
+.side-buy {
+  color: var(--colour-buy);
+  font-weight: 700;
+}
+
+.side-sell {
+  color: var(--colour-sell);
+  font-weight: 700;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+
+.badge-new {
+  background: var(--colour-warn-soft);
+  border-color: var(--colour-warn);
+  color: var(--colour-warn);
+}
+
+.badge-filled {
+  background: var(--colour-buy-soft);
+  border-color: var(--colour-buy);
+  color: var(--colour-buy);
+}
+
+.badge-rejected {
+  background: var(--colour-sell-soft);
+  border-color: var(--colour-sell);
+  color: var(--colour-sell);
+}
+
+.badge-cancelled {
+  background: var(--colour-page);
+  border-color: var(--colour-border);
+  color: var(--colour-text-muted);
+}
+
+/* Tables ------------------------------------------------------------------ */
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+th,
+td {
+  padding: var(--space-3);
+  text-align: left;
+  border-bottom: 1px solid var(--colour-border);
+  white-space: nowrap;
+}
+
+th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--colour-text-muted);
+  border-bottom-width: 2px;
+}
+
+td.right,
+th.right {
+  text-align: right;
+}
+
+tbody tr:hover {
+  background: var(--colour-page);
+}
+
+.empty {
+  padding: var(--space-6);
+  text-align: center;
+  color: var(--colour-text-muted);
+}

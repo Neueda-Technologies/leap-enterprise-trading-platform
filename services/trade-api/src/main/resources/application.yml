@@ -1,0 +1,113 @@
+# Trade REST API configuration.
+#
+# Every value that differs between a laptop and a deployed environment is read from an environment
+# variable with a default that works under Docker Compose. Nothing here is a secret in a repository:
+# JWT_SECRET and DB_PASSWORD carry development values that are obviously development values, and an
+# environment that uses them unchanged deserves the audit finding it will get.
+#
+# The service name defaults, postgres:5432 and kafka:9092, are the compose network names. Running on
+# the host instead, export DB_HOST=localhost and KAFKA_BOOTSTRAP_SERVERS=localhost:9092.
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    # Never serve Spring's default error page. Every failure leaves through the @ControllerAdvice, in
+    # the platform envelope. The whitelabel page leaks the exception class and the request path.
+    whitelabel:
+      enabled: false
+
+spring:
+  application:
+    name: trade-api
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:trading}
+    username: ${DB_USER:trading_app}
+    password: ${DB_PASSWORD:trading_app}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      # Small on purpose. A pool larger than the database can serve turns a queue inside Postgres
+      # into a queue inside the JVM, which is harder to see and no faster.
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      connection-timeout: 5000
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # Delivery semantics, per contracts/kafka-topics.md. acks=all waits for the in-sync replicas,
+      # idempotence removes duplicates caused by a producer retry, and capping in-flight requests at
+      # five keeps ordering within a partition while a retry is outstanding.
+      acks: all
+      retries: 10
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        delivery.timeout.ms: 120000
+        request.timeout.ms: 15000
+
+  jackson:
+    default-property-inclusion: always
+    serialization:
+      # Instants as RFC 3339 strings, not epoch numbers. The contract says date-time and a consumer
+      # in another language should not have to guess the unit.
+      write-dates-as-timestamps: false
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-handlers-package: com.tradingplatform.tradeapi.repository
+  configuration:
+    # Fail fast on a result map that does not cover a returned column, rather than silently mapping
+    # it to nothing.
+    auto-mapping-unknown-column-behavior: FAILING
+
+trading:
+  # sync  : Sprint 6. Fill in process and return FILLED or REJECTED. No broker needed.
+  # async : Sprint 7 onwards, the default. Record, publish to `orders`, return NEW.
+  execution-mode: ${TRADING_EXECUTION_MODE:async}
+  base-currency: ${TRADING_BASE_CURRENCY:USD}
+  jwt:
+    # HS256, shared with the auth service or the Node auth stub. At least 32 characters, because a
+    # shorter key is not a 256-bit key and jjwt refuses it at startup rather than at request time.
+    secret: ${JWT_SECRET:development-only-secret-change-me-0123456789}
+    clock-skew: ${JWT_CLOCK_SKEW_SECONDS:30}
+    # Blank accepts any issuer. The auth contract says consumers must not require a particular value,
+    # so that swapping auth-stub for auth-service in Sprint 8 is configuration only.
+    required-issuer: ${JWT_REQUIRED_ISSUER:}
+  kafka:
+    enabled: ${TRADING_KAFKA_ENABLED:true}
+    orders-topic: ${KAFKA_ORDERS_TOPIC:orders}
+    trade-events-topic: ${KAFKA_TRADE_EVENTS_TOPIC:trade-events}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
+    operations-sorter: method
+  api-docs:
+    path: /v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # health only. An open actuator surface is an information disclosure finding waiting to be
+        # written up, and the compose health check needs nothing else.
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  structured:
+    format:
+      # One JSON object per line, Elastic Common Schema. A log aggregator can index it, and a human
+      # can still read it with `docker compose logs | jq`. Unstructured log lines from six services
+      # are unsearchable by the time anything interesting happens.
+      console: ecs
+  level:
+    root: INFO
+    com.tradingplatform: INFO
+    # Uncomment while debugging a mapper. Never in a deployed environment: it logs bound parameter
+    # values, which for this service means account keys and cash balances.
+    # com.tradingplatform.tradeapi.repository: DEBUG

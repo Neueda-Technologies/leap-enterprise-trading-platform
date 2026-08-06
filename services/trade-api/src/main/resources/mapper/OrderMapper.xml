@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  orders. The audit trail.
+
+  There is no delete statement in this file and there will not be one. The application role has no
+  DELETE grant on the table, so a delete written here would fail at runtime rather than quietly
+  destroying the record the platform is legally required to keep.
+-->
+<mapper namespace="com.tradingplatform.tradeapi.repository.OrderMapper">
+
+  <resultMap id="orderResult" type="com.tradingplatform.domain.model.Order">
+    <constructor>
+      <idArg column="id"              javaType="java.util.UUID"/>
+      <arg   column="account_id"      javaType="java.lang.Long"/>
+      <arg   column="symbol"          javaType="java.lang.String"/>
+      <arg   column="side"            javaType="com.tradingplatform.domain.model.OrderSide"/>
+      <arg   column="quantity"        javaType="_int"/>
+      <arg   column="price"           javaType="java.math.BigDecimal"/>
+      <arg   column="status"          javaType="com.tradingplatform.domain.model.OrderStatus"/>
+      <arg   column="idempotency_key" javaType="java.lang.String"/>
+      <arg   column="created_on"      javaType="java.time.Instant"/>
+      <arg   column="executed_price"  javaType="java.math.BigDecimal"/>
+      <arg   column="executed_on"     javaType="java.time.Instant"/>
+      <arg   column="reject_reason"   javaType="java.lang.String"/>
+    </constructor>
+  </resultMap>
+
+  <sql id="orderColumns">
+    id, account_id, symbol, side, quantity, price, status,
+    idempotency_key, created_on, executed_price, executed_on, reject_reason
+  </sql>
+
+  <!--
+    Business rule 8 lives in the unique constraint uq_orders_idempotency_key, not above this insert.
+    A duplicate key raises a constraint violation, Spring's exception translator turns it into
+    DuplicateKeyException, and OrderService turns that into ORD-409.
+  -->
+  <insert id="insert">
+    INSERT INTO orders (id, account_id, symbol, side, quantity, price,
+                        status, idempotency_key, created_on)
+    VALUES (#{order.id},
+            #{order.accountId},
+            #{order.symbol},
+            #{order.side},
+            #{order.quantity},
+            #{order.price},
+            #{order.status},
+            #{order.idempotencyKey},
+            #{order.createdOn})
+  </insert>
+
+  <select id="findById" resultMap="orderResult">
+    SELECT <include refid="orderColumns"/>
+      FROM orders
+     WHERE id = #{id}
+  </select>
+
+  <!--
+    The blotter. Newest first, unfiltered by default, because it is the audit trail and hiding
+    rejected orders from it is how a fill rate of 100 per cent gets reported.
+
+    Served by ix_orders_account_created. The optional filters narrow the same index scan; none of
+    them changes which index is used.
+  -->
+  <select id="findByAccount" resultMap="orderResult">
+    SELECT <include refid="orderColumns"/>
+      FROM orders
+     WHERE account_id = #{accountId}
+    <if test="status != null">
+       AND status = #{status}
+    </if>
+    <if test="from != null">
+       AND created_on &gt;= #{from}
+    </if>
+    <if test="to != null">
+       AND created_on &lt;= #{to}
+    </if>
+     ORDER BY created_on DESC
+  </select>
+
+  <!--
+    Guarded transitions. The AND status = 'NEW' predicate is the concurrency control, and the row
+    count is the answer. Do not replace either with a SELECT followed by an UPDATE.
+  -->
+  <update id="fillIfNew">
+    UPDATE orders
+       SET status         = 'FILLED',
+           executed_price = #{executedPrice},
+           executed_on    = #{executedOn}
+     WHERE id     = #{id}
+       AND status = 'NEW'
+  </update>
+
+  <update id="cancelIfNew">
+    UPDATE orders
+       SET status = 'CANCELLED'
+     WHERE id     = #{id}
+       AND status = 'NEW'
+  </update>
+
+</mapper>

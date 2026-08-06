@@ -1,0 +1,72 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: portfolio-pnl-service
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/trading}
+    username: ${DB_USERNAME:trading_app}
+    password: ${DB_PASSWORD:trading_app}
+    hikari:
+      pool-name: portfolio-pnl-pool
+      maximum-pool-size: 10
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      # This service never issues DDL. Extension-owned tables are created by
+      # db/portfolio-schema.sql below; the shared trading schema is owned by
+      # the Trade REST API team and must not be migrated from here.
+      ddl-auto: none
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/portfolio-schema.sql
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: portfolio-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      # The envelope in kafka-topics.md is one shape shared by every topic, but the
+      # payload differs by topic. Deserialising to a plain string and parsing the
+      # envelope and payload explicitly in each listener, rather than binding to a
+      # generic type through the Kafka deserialiser, keeps that difference visible in
+      # application code instead of hidden in configuration.
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      ack-mode: manual_immediate
+
+jwt:
+  secret: ${JWT_SECRET:dev-secret-change-me-dev-secret-change-me}
+
+fauxnance:
+  base-url: ${FAUXNANCE_BASE_URL:https://y4t9nq2bqf.execute-api.eu-west-2.amazonaws.com/v1}
+  api-key: ${FAUXNANCE_API_KEY:}
+  quote-cache-ttl-seconds: ${FAUXNANCE_QUOTE_CACHE_TTL_SECONDS:10}
+  quote-batch-size: 25
+  connect-timeout-ms: 2000
+  read-timeout-ms: 3000
+
+portfolio:
+  base-currency: ${PORTFOLIO_BASE_CURRENCY:USD}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    root: INFO
+    com.tradingplatform.portfolio: INFO
