@@ -1,0 +1,20 @@
+/*
+ * Global stylesheet.
+ *
+ * There is no component library in this workspace. Shared vocabulary goes here: colours,
+ * spacing, forms, tables and the status badges the blotter needs. Layout for one screen
+ * belongs in that component's own stylesheet.
+ *
+ * One rule before you choose your palette. Colour is never the only signal. BUY and SELL,
+ * and a filled order against a rejected one, each carry the word as well as the hue,
+ * because roughly one man in twelve cannot separate red from green.
+ */
+
+:root {
+  color-scheme: light;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  margin: 0;
+}

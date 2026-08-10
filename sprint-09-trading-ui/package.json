@@ -1,0 +1,44 @@
+{
+  "name": "etp-trading-ui",
+  "version": "1.0.0",
+  "description": "Angular application for the Enterprise Trading Platform, Sprint 9.",
+  "private": true,
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test --no-watch",
+    "test:watch": "ng test",
+    "generate": "openapi-generator-cli generate",
+    "e2e": "playwright test",
+    "e2e:install": "playwright install --with-deps chromium",
+    "e2e:report": "playwright show-report",
+    "format": "prettier --write \"src/**/*.{ts,html,css}\" \"e2e/**/*.ts\""
+  },
+  "dependencies": {
+    "@angular/common": "^21.2.0",
+    "@angular/compiler": "^21.2.0",
+    "@angular/core": "^21.2.0",
+    "@angular/forms": "^21.2.0",
+    "@angular/platform-browser": "^21.2.0",
+    "@angular/router": "^21.2.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^21.2.20",
+    "@angular/cli": "^21.2.20",
+    "@angular/compiler-cli": "^21.2.0",
+    "@openapitools/openapi-generator-cli": "^2.40.1",
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.1.2",
+    "jsdom": "^28.0.0",
+    "prettier": "^3.8.1",
+    "typescript": "~5.9.2",
+    "vitest": "^4.0.8"
+  }
+}

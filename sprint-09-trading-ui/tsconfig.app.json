@@ -1,0 +1,14 @@
+/*
+ * The build view. Every TypeScript file under src/ compiles, including the clients you
+ * generate from the contracts, so a contract change that your code has not caught up with
+ * is a failed build rather than a failed request.
+ */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/app",
+    "types": []
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.spec.ts", "src/testing/**/*.ts"]
+}

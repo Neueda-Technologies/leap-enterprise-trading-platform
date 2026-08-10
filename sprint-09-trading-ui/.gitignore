@@ -1,0 +1,19 @@
+# Build output
+/dist
+/out-tsc
+/.angular
+
+# Dependencies
+/node_modules
+
+# Playwright
+/playwright-report
+/test-results
+/blob-report
+/playwright/.cache
+
+# The generated API clients are NOT ignored. They are committed on purpose: see
+# src/app/core/api/README.md and the sprint brief.
+
+# Local environment
+.env

@@ -1,0 +1,12 @@
+/*
+ * The unit-test view. Specs and anything under src/testing/ compile here and nowhere else,
+ * so a source file that imports a test helper fails the application build.
+ */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/spec",
+    "types": ["vitest/globals"]
+  },
+  "include": ["src/**/*.d.ts", "src/**/*.spec.ts", "src/testing/**/*.ts"]
+}
