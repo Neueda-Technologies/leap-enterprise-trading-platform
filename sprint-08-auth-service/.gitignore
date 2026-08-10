@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+.env
+*.log
+
+# package-lock.json is committed on purpose. npm ci installs exactly what it
+# names, and the harness uses it.
