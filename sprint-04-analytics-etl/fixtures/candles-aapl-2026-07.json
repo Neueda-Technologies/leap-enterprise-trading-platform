@@ -1,0 +1,107 @@
+{
+  "data": {
+    "symbol": "AAPL",
+    "interval": "1d",
+    "currency": "USD",
+    "candles": [
+      {
+        "date": "2026-07-01",
+        "open": 214.2,
+        "high": 216.05,
+        "low": 213.41,
+        "close": 215.62,
+        "adjclose": 215.62,
+        "volume": 48213900,
+        "synthetic": false
+      },
+      {
+        "date": "2026-07-02",
+        "open": 215.7,
+        "high": 218.9,
+        "low": 215.11,
+        "close": 218.34,
+        "adjclose": 218.34,
+        "volume": 52907100,
+        "synthetic": false
+      },
+      {
+        "date": "2026-07-06",
+        "open": 218.05,
+        "high": 219.44,
+        "low": 216.2,
+        "close": 216.88,
+        "adjclose": 216.88,
+        "volume": 39114800,
+        "synthetic": false
+      },
+      {
+        "date": "2026-07-07",
+        "open": 216.9,
+        "high": 217.35,
+        "low": 211.02,
+        "close": 211.74,
+        "adjclose": 211.74,
+        "volume": 61330500,
+        "synthetic": false
+      },
+      {
+        "date": "2026-07-08",
+        "open": 211.6,
+        "high": 213.88,
+        "low": 210.95,
+        "close": 213.05,
+        "adjclose": 213.05,
+        "volume": 44026300,
+        "synthetic": false
+      },
+      {
+        "date": "2026-07-09",
+        "open": 213.2,
+        "high": 214.1,
+        "low": 209.66,
+        "close": 210.18,
+        "adjclose": 210.18,
+        "volume": 50882700,
+        "synthetic": false
+      },
+      {
+        "date": "2026-07-10",
+        "open": 210.4,
+        "high": 212.77,
+        "low": 209.9,
+        "close": 212.41,
+        "adjclose": 212.41,
+        "volume": 37455200,
+        "synthetic": false
+      },
+      {
+        "date": "2026-07-13",
+        "open": 212.8,
+        "high": 216.6,
+        "low": 212.55,
+        "close": 216.09,
+        "adjclose": 216.09,
+        "volume": 41903600,
+        "synthetic": false
+      },
+      {
+        "date": "2026-07-14",
+        "open": 216.15,
+        "high": 217.02,
+        "low": 214.3,
+        "close": 214.87,
+        "adjclose": 214.87,
+        "volume": 35617400,
+        "synthetic": false
+      }
+    ]
+  },
+  "meta": {
+    "asOf": "2026-07-15T06:00:00Z",
+    "disclaimer": "Educational data. Not for investment use.",
+    "symbol": "AAPL",
+    "source": "stored",
+    "stale": false,
+    "availableFrom": "2016-01-04"
+  }
+}

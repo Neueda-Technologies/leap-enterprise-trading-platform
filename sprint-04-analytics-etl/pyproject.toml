@@ -1,0 +1,38 @@
+[project]
+name = "analytics"
+version = "0.1.0"
+description = "Enterprise Trading Platform: Sprint 4 market-data pipeline and dashboard."
+readme = "README.md"
+requires-python = ">=3.12"
+
+# The toolchain for this sprint. requests talks to Fauxnance, pandas does the
+# transform, duckdb is the analytical store the load step writes to, plotly
+# draws the charts and writes a self-contained HTML file, python-dotenv reads
+# .env so the key never has to be typed on a command line.
+#
+# Add a library if you need one and can say why in the review. Do not swap the
+# set out wholesale: Sprint 7 extends this package rather than replacing it.
+dependencies = [
+    "duckdb>=1.0.0",
+    "pandas>=2.2.0",
+    "plotly>=5.22.0",
+    "requests>=2.32.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/analytics"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
