@@ -1,0 +1,49 @@
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Editors and IDEs
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+*.swp
+
+# Secrets and local environment. Never commit a real key.
+.env
+.env.local
+.env.*.local
+*.pem
+
+# Java and Maven
+target/
+*.class
+*.jar
+*.war
+
+# Node, TypeScript and Angular
+node_modules/
+dist/
+.angular/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Test and build output
+coverage/
+build/
+out/
+test-results/
+playwright-report/
+*.log
