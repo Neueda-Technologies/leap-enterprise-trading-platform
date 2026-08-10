@@ -1,0 +1,10 @@
+symbol,instrument_name,asset_category,quote_currency,open_for_trading
+INFY.NS,Infosys Limited,EQUITY,INR,true
+RELIANCE.NS,Reliance Industries Limited,EQUITY,INR,true
+TATASTEEL.BO,Tata Steel Limited,EQUITY,INR,true
+HDFCBANK.NS,HDFC Bank Limited,EQUITY,INR,true
+AAPL,Apple Inc,EQUITY,USD,true
+SPY,SPDR S&P 500 ETF Trust,ETF,USD,true
+FX:EURUSD,Euro against United States Dollar,FX,USD,true
+X:BTC-USD,Bitcoin against United States Dollar,CRYPTO,USD,true
+SATYAM.BO,Satyam Computer Services Limited,EQUITY,INR,false
