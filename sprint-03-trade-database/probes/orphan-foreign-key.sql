@@ -1,0 +1,24 @@
+-- Probe: a row cannot reference a parent that does not exist.
+--
+-- Replace the body of this file with a single INSERT that is valid in every
+-- respect except one: it references a parent row that is not there. An order
+-- against an account key nobody holds is the obvious choice, and an order in
+-- an instrument that was never created works equally well.
+--
+-- The harness wraps this file in BEGIN and ROLLBACK, so it leaves nothing
+-- behind, and it runs after your seed data has loaded. Pick a parent value
+-- that your seed data certainly does not contain.
+--
+-- The harness expects SQLSTATE 23503, foreign key violation. Any other outcome
+-- is a finding:
+--
+--   the insert succeeds         the relationship is not enforced by a foreign
+--                               key, only by application code that has not
+--                               been written yet
+--   23505, unique violation     the row collides with something already there
+--   23502, not null             a required column is missing from the insert
+--
+-- Referential integrity that lives only in application code survives exactly
+-- as long as the first script somebody runs by hand.
+
+-- Write your insert below.
