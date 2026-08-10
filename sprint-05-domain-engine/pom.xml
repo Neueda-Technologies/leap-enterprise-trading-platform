@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--
+    These coordinates are how the Trade REST API will resolve this module from your local Maven
+    repository in Sprint 6. Change them if you want to, and change them in Sprint 6 as well.
+  -->
+  <groupId>com.tradingplatform</groupId>
+  <artifactId>trading-engine</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+
+  <name>Trading domain engine</name>
+  <description>
+    Sprint 5 deliverable. Entities, enumerations, the order request DTO, the exception hierarchy and
+    business rules 1 to 8 for the Enterprise Trading Platform. No database access, no HTTP, no
+    Spring.
+  </description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>21</maven.compiler.release>
+    <junit.version>5.14.4</junit.version>
+    <jakarta.validation.version>3.0.2</jakarta.validation.version>
+    <hibernate.validator.version>8.0.5.Final</hibernate.validator.version>
+    <expressly.version>5.0.0</expressly.version>
+    <surefire.version>3.5.4</surefire.version>
+    <enforcer.version>3.5.0</enforcer.version>
+  </properties>
+
+  <dependencies>
+
+    <!--
+      The only compile dependency. The architecture allows Bean Validation annotations in the domain
+      and nothing else: no Spring, no JDBC driver, no HTTP client. Annotations are declarations
+      rather than behaviour, which is why they are the exception. If this list grows, the domain has
+      stopped being a domain.
+
+      Leave it here even if you validate the DTO by hand. Sprint 6 expects the constraints to travel
+      with the type.
+    -->
+    <dependency>
+      <groupId>jakarta.validation</groupId>
+      <artifactId>jakarta.validation-api</artifactId>
+      <version>${jakarta.validation.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!--
+      A Bean Validation implementation, needed only so that PlaceOrderRequestValidationTest can run a
+      validator. Test scope, so it never reaches anything that depends on this module.
+    -->
+    <dependency>
+      <groupId>org.hibernate.validator</groupId>
+      <artifactId>hibernate-validator</artifactId>
+      <version>${hibernate.validator.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.expressly</groupId>
+      <artifactId>expressly</artifactId>
+      <version>${expressly.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire.version}</version>
+      </plugin>
+
+      <!--
+        The acceptance criterion "no database, HTTP or Spring dependency in the domain module",
+        enforced by the build rather than by good intentions.
+
+        The rules that decide whether a trade may happen are called from a Spring controller in
+        Sprint 6 and from a Kafka consumer in Sprint 7. A domain that has quietly acquired a
+        framework, a servlet API or a database driver can only be used by callers that brought the
+        same ones, and the second caller then reimplements the rules instead. This rule fails the
+        build the moment one of them appears, including transitively through something else.
+
+        Do not remove it. If you want to, the dependency you are about to add belongs in Sprint 6.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${enforcer.version}</version>
+        <executions>
+          <execution>
+            <id>ban-framework-and-database-dependencies</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[21,)</version>
+                  <message>This module targets Java 21. Install a JDK 21 or later.</message>
+                </requireJavaVersion>
+                <bannedDependencies>
+                  <searchTransitive>true</searchTransitive>
+                  <message>
+                    The domain module must not depend on Spring, on a servlet API or on a JDBC
+                    driver. See the comment above this rule in pom.xml.
+                  </message>
+                  <excludes>
+                    <!-- Spring, in every shape it arrives in. -->
+                    <exclude>org.springframework:*</exclude>
+                    <exclude>org.springframework.boot:*</exclude>
+                    <exclude>org.springframework.security:*</exclude>
+                    <exclude>org.springframework.data:*</exclude>
+                    <exclude>org.springframework.kafka:*</exclude>
+                    <!-- HTTP, at the servlet layer. -->
+                    <exclude>jakarta.servlet:*</exclude>
+                    <exclude>javax.servlet:*</exclude>
+                    <!-- JDBC drivers, connection pools and the persistence framework. -->
+                    <exclude>org.postgresql:*</exclude>
+                    <exclude>mysql:*</exclude>
+                    <exclude>com.mysql:*</exclude>
+                    <exclude>com.h2database:*</exclude>
+                    <exclude>org.mariadb.jdbc:*</exclude>
+                    <exclude>com.oracle.database.jdbc:*</exclude>
+                    <exclude>com.microsoft.sqlserver:*</exclude>
+                    <exclude>org.xerial:sqlite-jdbc</exclude>
+                    <exclude>org.mybatis:*</exclude>
+                    <exclude>com.zaxxer:HikariCP</exclude>
+                  </excludes>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+  </build>
+
+</project>
