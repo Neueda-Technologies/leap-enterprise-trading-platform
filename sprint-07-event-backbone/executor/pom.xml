@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--
+    Spring Boot's parent POM manages the version of every dependency it knows about, which is why
+    most of the dependencies below carry no <version>. It is the same parent the Sprint 6 service
+    uses, on the same version, so the two services agree on Jackson, on the JDBC pool and on the
+    Kafka client.
+  -->
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.5.16</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.tradingplatform</groupId>
+  <artifactId>trade-executor</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+
+  <name>Trade Executor</name>
+  <description>
+    Sprint 7 deliverable. Consumes accepted orders from the orders topic, prices them against a live
+    Fauxnance quote, settles them in one Postgres transaction and publishes the outcome to
+    trade-events.
+  </description>
+
+  <properties>
+    <java.version>21</java.version>
+  </properties>
+
+  <dependencies>
+
+    <!--
+      Spring MVC and an embedded server. The executor serves no business endpoint. The web starter
+      is here because the health endpoint below needs a port to answer on, and because a service
+      with no way to say whether it is alive cannot be depended on by anything in the compose file.
+    -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Health endpoint, for the container health check. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <!--
+      JDBC and the transaction manager. This service settles an order by writing three tables at
+      once, so it needs a transaction boundary and a template to write through. There is no MyBatis
+      here on purpose: the executor runs a handful of statements it owns, and adding a second
+      persistence framework to the platform buys nothing.
+    -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+
+    <!-- The consumer, the producer, the listener container and the dead-letter machinery. -->
+    <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka</artifactId>
+    </dependency>
+
+    <!-- The JDBC driver. Runtime scope: nothing you write should compile against a driver. -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- JUnit 5, Mockito, AssertJ and the Spring test slices. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!--
+      Two dependencies you may want and this scaffold deliberately does not add.
+
+      Your Sprint 5 domain module, if you call the buy and sell rules from here rather than writing
+      them again. Business rules 6 and 7 have to be re-checked at execution time, and the module is
+      the second caller's copy of them. Declare it exactly as sprint-06-trade-api/pom.xml does:
+
+        <dependency>
+          <groupId>com.tradingplatform</groupId>
+          <artifactId>trading-engine</artifactId>
+          <version>1.0.0</version>
+        </dependency>
+
+      spring-kafka-test, if you write a test against an embedded broker. Most of what this service
+      decides is decidable without one: the fill rule, the guarded transition and the event shape
+      are all testable with a mocked repository and a faked HTTP layer, and a test that needs a
+      broker is a test somebody will skip.
+    -->
+
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Repackages the jar so that `java -jar` runs it. That jar is what your image copies. -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

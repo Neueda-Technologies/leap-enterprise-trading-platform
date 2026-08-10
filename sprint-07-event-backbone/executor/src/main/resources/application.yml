@@ -1,0 +1,103 @@
+# Trade Executor configuration.
+#
+# A skeleton. The sections below are the ones this service needs; what goes in
+# most of them is your decision and is left commented out.
+#
+# The rule from Sprint 6 still holds. Every value that differs between a laptop
+# and a container is read from an environment variable, with a default that
+# works under Docker Compose where a default is safe. `postgres` and `kafka`
+# resolve inside the compose network; running on the host instead, export
+# DB_HOST=localhost and KAFKA_BOOTSTRAP_SERVERS=localhost:9092. Connection
+# details are in infra/README.md.
+#
+# No secret is committed here, including a development one, and the Fauxnance
+# key has no default at all.
+
+server:
+  # Not 8080. The Trade REST API is already there.
+  port: ${SERVER_PORT:8082}
+
+spring:
+  application:
+    name: trade-executor
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:trading}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres_dev_password}
+    driver-class-name: org.postgresql.Driver
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:29092}
+
+    consumer:
+      # The group every instance of this service joins, and that no other
+      # service shares. `orders` is a work queue with exactly one logical
+      # consumer group: a second group means two services executing the same
+      # order. Two different services sharing one group identifier is worse,
+      # because each sees part of the stream and the symptom is messages
+      # disappearing at random.
+      group-id: ${EXECUTOR_CONSUMER_GROUP:trade-executor}
+
+      # Off. The offset is committed after the work, not after the poll.
+      # Committing first means a crash loses the order. Committing after means
+      # a crash reprocesses it, which is survivable because the settlement is
+      # idempotent, and losing a trade is not.
+      enable-auto-commit: false
+
+      # auto-offset-reset:
+      #   What a group with no committed offset does. Decide it deliberately:
+      #   `earliest` replays everything the topic still holds the first time
+      #   the service starts, and `latest` skips whatever was published while
+      #   it was down.
+
+    # producer:
+    #   The topic contract fixes four settings for a producer whose messages
+    #   are money: acks, idempotence, retries, and the number of requests in
+    #   flight per connection. Set them here and be ready to say what each one
+    #   prevents.
+
+    # listener:
+    #   The acknowledgement mode, and how many listener threads run. A
+    #   concurrency above the partition count buys nothing: the extra
+    #   consumers sit idle, because a partition is assigned to one consumer in
+    #   the group at a time.
+
+executor:
+  topics:
+    orders: ${ORDERS_TOPIC:orders}
+    trade-events: ${TRADE_EVENTS_TOPIC:trade-events}
+
+  # retry:
+  #   How many attempts a message gets before it goes to orders.DLT, and the
+  #   backoff between them. Count the first delivery as an attempt. Note that
+  #   the framework default dead-letter suffix is not the `<topic>.DLT` the
+  #   contract names, so this is a setting you have to change rather than
+  #   accept.
+
+  # latency:
+  #   Fauxnance answers in tens of milliseconds and Postgres in single
+  #   milliseconds, so without a delay a fill lands before the operator has
+  #   let go of the mouse button and the demonstration looks exactly like the
+  #   synchronous Sprint 6 behaviour. A small simulated execution delay makes
+  #   the asynchrony visible. Keep it well inside the consumer's maximum poll
+  #   interval, or the broker decides the consumer has died and rebalances the
+  #   partition away mid-order.
+
+fauxnance:
+  base-url: ${FAUXNANCE_BASE_URL:https://y4t9nq2bqf.execute-api.eu-west-2.amazonaws.com/v1}
+  # The key. No default, deliberately. A service that will not start without
+  # its key is easier to diagnose than one that starts with a key somebody
+  # committed.
+  api-key: ${FAUXNANCE_API_KEY}
+  # timeout, retries, and how long a quote may be reused before it is fetched
+  # again. The quota is 2000 requests per day and this service shares it with
+  # the poller.
+
+# management:
+#   The container health check needs one endpoint. Expose that one.
+
+# logging:
+#   One line per order, carrying the order identifier, is what makes the
+#   duplicate-delivery demonstration legible to somebody watching. Never log
+#   the Fauxnance key, an account balance or a bound statement parameter.

@@ -1,0 +1,9 @@
+# The warehouse file and build output. Neither is committed: the warehouse is
+# derived data and a teammate rebuilds it by running the loader.
+*.duckdb
+*.duckdb.wal
+build/
+dist/
+*.egg-info/
+__pycache__/
+.pytest_cache/

@@ -1,0 +1,35 @@
+[project]
+name = "market-data-poller"
+version = "0.1.0"
+description = "Enterprise Trading Platform: Sprint 7 poller, Fauxnance batch quotes onto the market-data topic."
+requires-python = ">=3.12"
+
+# The toolchain for this service, and it is deliberately two libraries. requests
+# calls the batch quotes endpoint; kafka-python publishes. There is no database,
+# no web framework and no dataframe here, because the service has one
+# responsibility and nothing it does needs any of them.
+#
+# Add a library if you need one and can say why in the review.
+dependencies = [
+    "requests>=2.32,<3",
+    "kafka-python>=3.0,<4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+market-data-poller = "market_data_poller.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/market_data_poller"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

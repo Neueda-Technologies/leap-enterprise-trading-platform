@@ -1,0 +1,6 @@
+# Build and test output. Rebuilt on demand, never committed.
+build/
+dist/
+*.egg-info/
+__pycache__/
+.pytest_cache/

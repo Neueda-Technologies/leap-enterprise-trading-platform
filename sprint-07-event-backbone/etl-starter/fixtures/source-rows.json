@@ -1,0 +1,27 @@
+{
+  "instruments": [
+    ["AAPL", "Apple Inc.", "EQUITY", "USD", true],
+    ["MSFT", "Microsoft Corporation", "EQUITY", "USD", true],
+    ["SPY", "SPDR S&P 500 ETF Trust", "ETF", "USD", true],
+    ["INFY.NS", "Infosys Limited", "EQUITY", "INR", true],
+    ["X:BTCUSD", "Bitcoin", "CRYPTO", "USD", false]
+  ],
+  "accounts": [
+    [1, "ACC-0000001", "Aoife Brennan", "ACTIVE"],
+    [2, "ACC-0000002", "Daniel Okafor", "ACTIVE"],
+    [3, "ACC-0000003", "Priya Raman", "SUSPENDED"],
+    [4, "ACC-0000004", "Tomas Novak", "CLOSED"]
+  ],
+  "orders": [
+    ["6f2b1c2a-6a1e-4a4f-9c0d-2f7a1b3c4d5e", 1, "AAPL", "BUY", 100, 233.00, "FILLED", 232.71, "2026-09-28T09:14:22"],
+    ["a1c39d47-0e52-4f18-9b6a-3d8c2e1f4a90", 1, "AAPL", "SELL", 40, 240.00, "FILLED", 241.15, "2026-09-28T11:02:05"],
+    ["b28ef0d5-71c4-4a93-8e2f-6c5d4b3a2109", 2, "MSFT", "BUY", 25, 410.50, "REJECTED", null, "2026-09-28T13:47:51"],
+    ["c3907ea6-82d5-4b04-9f30-7d6e5c4b3210", 2, "SPY", "BUY", 10, 560.00, "NEW", null, "2026-09-29T08:31:19"],
+    ["d4a18fb7-93e6-4c15-a041-8e7f6d5c4321", 3, "INFY.NS", "BUY", 200, 1512.40, "CANCELLED", null, "2026-09-29T10:05:44"],
+    ["e5b290c8-a4f7-4d26-b152-9f807e6d5432", 1, "MSFT", "BUY", 15, 408.00, "FILLED", null, "2026-09-29T14:22:37"],
+    ["f6c3a1d9-b508-4e37-c263-a0918f7e6543", 2, "X:BTCUSD", "SELL", 1, 61000.00, "FILLED", 60880.25, "2026-09-30T07:18:02"],
+    ["07d4b2ea-c619-4f48-d374-b1a2908f7654", 9, "AAPL", "BUY", 5, 235.00, "FILLED", 234.80, "2026-09-30T09:00:00"],
+    ["18e5c3fb-d72a-4059-e485-c2b3a1908765", 1, "TSLA", "BUY", 3, 420.00, "FILLED", 419.60, "2026-09-30T09:45:13"],
+    ["29f6d40c-e83b-416a-f596-d3c4b2a19876", 2, "AAPL", "BUY", 50, 231.00, "FILLED", 230.44, "2029-12-31T23:59:59"]
+  ]
+}
