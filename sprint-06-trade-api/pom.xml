@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--
+    Spring Boot's parent POM manages the version of every dependency it knows about, which is why
+    most of the dependencies below carry no <version>. Upgrade this one number rather than twenty.
+  -->
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.5.16</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.tradingplatform</groupId>
+  <artifactId>trade-api</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+
+  <name>Trade REST API</name>
+  <description>
+    Sprint 6 deliverable. Order placement, order cancellation and account queries for the Enterprise
+    Trading Platform, implementing contracts/trade-api.yaml.
+  </description>
+
+  <properties>
+    <java.version>21</java.version>
+
+    <!--
+      The coordinates of your Sprint 5 domain module. There is no aggregator build: this service
+      resolves that module from your local Maven repository, so `mvn install` in
+      sprint-05-domain-engine has to happen before `mvn verify` here, and again whenever the domain
+      changes.
+
+      These three values are the defaults the Sprint 5 scaffold declares. If your team changed them
+      there, change them here and in manifest.env, and keep all three files in agreement.
+    -->
+    <domain.groupId>com.tradingplatform</domain.groupId>
+    <domain.artifactId>trading-engine</domain.artifactId>
+    <domain.version>1.0.0</domain.version>
+
+    <mybatis.version>3.0.5</mybatis.version>
+    <springdoc.version>2.8.17</springdoc.version>
+    <jjwt.version>0.12.7</jjwt.version>
+  </properties>
+
+  <dependencies>
+
+    <!-- The Sprint 5 domain engine: entities, enumerations, the DTO, the exceptions and the rules. -->
+    <dependency>
+      <groupId>${domain.groupId}</groupId>
+      <artifactId>${domain.artifactId}</artifactId>
+      <version>${domain.version}</version>
+    </dependency>
+
+    <!-- Spring MVC and an embedded server. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!--
+      Bean Validation, with an implementation. The constraints themselves travel with the DTO from
+      the domain module; this is what runs them at the edge.
+    -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+
+    <!-- Health endpoint, for the container health check. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <!-- MyBatis, wired to the Spring Boot datasource and to the mapper scan. -->
+    <dependency>
+      <groupId>org.mybatis.spring.boot</groupId>
+      <artifactId>mybatis-spring-boot-starter</artifactId>
+      <version>${mybatis.version}</version>
+    </dependency>
+
+    <!-- The JDBC driver. Runtime scope: nothing you write should compile against a driver. -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- The live API description, generated from the running code and served by the service. -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>${springdoc.version}</version>
+    </dependency>
+
+    <!--
+      JWT verification. jjwt-impl and jjwt-jackson are runtime only on purpose: compiling against
+      them would let your code reach past the API and into the implementation.
+    -->
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-api</artifactId>
+      <version>${jjwt.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-impl</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-jackson</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- JUnit 5, Mockito, AssertJ and the Spring test slices, including @WebMvcTest. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- @MybatisTest, for exercising a mapper against a real database engine. -->
+    <dependency>
+      <groupId>org.mybatis.spring.boot</groupId>
+      <artifactId>mybatis-spring-boot-starter-test</artifactId>
+      <version>${mybatis.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!--
+      An in-memory database, so that a mapper test runs in a second without Docker. It is not
+      Postgres and your mapper tests should know it: the compose stack is the acceptance
+      environment and this is the fast loop while you are writing SQL.
+    -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Repackages the jar so that `java -jar` runs it. That jar is what your image copies. -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

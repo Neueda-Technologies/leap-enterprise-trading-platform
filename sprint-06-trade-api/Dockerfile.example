@@ -1,0 +1,56 @@
+# The naive Dockerfile. Read it, then write a better one.
+#
+# This file is deliberately the version you are being asked to improve on. It
+# builds, it runs, and it fails the acceptance criterion, which is the point:
+# an image that works is not the same as an image you would deploy. Your own
+# Dockerfile goes in this folder as `Dockerfile` and is assessed. This one is
+# not read by the harness and is not read by Docker unless you name it.
+#
+# The build context is the repository root, not this folder, because the image
+# has to build both projects:
+#
+#   docker build -f sprint-06-trade-api/Dockerfile.example -t trade-api:naive .
+#
+# WHY THE CONTEXT IS THE REPOSITORY ROOT
+#
+# This service resolves the Sprint 5 domain module from a local Maven
+# repository. The image build has no access to the one on your laptop: it runs
+# in a container with an empty ~/.m2. So the build has to compile and install
+# the domain module too, which means both folders have to be inside the build
+# context, and Docker cannot copy from above its context.
+#
+# WHAT IS WRONG WITH THIS FILE
+#
+# 1. One stage. The image that runs the service is the image that built it, so
+#    it ships Maven, a full JDK, the entire dependency cache and your source
+#    code. That is several hundred megabytes of things the service never uses,
+#    and every tool in an image is a tool available to whoever gets into the
+#    container. A compiler in production is a compiler in production.
+#
+# 2. It runs as root. A process that never needs to write to the image should
+#    not be able to.
+#
+# 3. `COPY . .` before the build means any change to any file in the repository
+#    invalidates the layer holding the resolved dependencies, so every rebuild
+#    re-downloads the world. It also copies the whole repository into the
+#    image, including anything git-ignored that happens to be sitting there.
+#
+# 4. The jar name is written out by hand, so a version bump in pom.xml produces
+#    an image that builds and then fails to start.
+#
+# 5. Nothing tells Docker whether the service is healthy, so `docker compose ps`
+#    reports a container that is running even when the application inside it
+#    died on startup.
+
+FROM maven:3.9-eclipse-temurin-21
+
+WORKDIR /build
+
+COPY . .
+
+RUN mvn -B -f sprint-05-domain-engine/pom.xml -DskipTests install
+RUN mvn -B -f sprint-06-trade-api/pom.xml -DskipTests package
+
+EXPOSE 8080
+
+CMD ["java", "-jar", "/build/sprint-06-trade-api/target/trade-api-1.0.0.jar"]

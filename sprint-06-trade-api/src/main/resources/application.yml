@@ -1,0 +1,72 @@
+# Trade REST API configuration.
+#
+# A skeleton. The sections below are the ones this service needs; what goes in
+# most of them is your decision and is left commented out.
+#
+# One rule shapes the whole file. Every value that differs between a laptop and
+# a container is read from an environment variable, with a default that works
+# under Docker Compose where a default is safe. The service names `postgres`
+# and `auth-stub` resolve inside the compose network; running on the host
+# instead, export DB_HOST=localhost. Connection details are in infra/README.md.
+#
+# No secret is committed here, including a development one. A signing secret in
+# a properties file is a signing secret in the history of the repository
+# forever, and deleting it later does not remove it.
+
+server:
+  port: ${SERVER_PORT:8080}
+  # Turn off the whitelabel error page. Every failure has to leave through your
+  # exception handling, in the platform envelope. The default page leaks the
+  # exception and the request path to whoever provoked it.
+
+spring:
+  application:
+    name: trade-api
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:trading}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres_dev_password}
+    driver-class-name: org.postgresql.Driver
+    # hikari:
+    #   The pool ceiling. Larger than the database can serve turns a queue
+    #   inside Postgres into a queue inside the JVM, which is harder to see and
+    #   no faster. Set a connection timeout as well, so that a database that is
+    #   not there fails a request rather than hanging it.
+
+  # jackson:
+  #   The contract types every timestamp as date-time. Decide how instants are
+  #   serialised, and make a consumer in another language not have to guess the
+  #   unit.
+
+# mybatis:
+#   Where your statements are. Needed if you write them in XML; not needed if
+#   you write them in annotations on the mapper interfaces. Consider also what
+#   should happen when a result map does not cover a column the query returned:
+#   the default is to ignore it.
+
+trading:
+  jwt:
+    # HS256, shared with whatever issued the token. No default: the service
+    # should refuse to start without it rather than verify against a value
+    # somebody left in a file. It comes from .env through docker-compose.yml,
+    # and it has to be the same secret the auth stub signs with.
+    secret: ${JWT_SECRET}
+    # Decide what tolerance you allow on the expiry, and whether you require a
+    # particular issuer. The auth contract says consumers must not require one,
+    # so that swapping the stub for the real service in Sprint 8 is a
+    # configuration change.
+
+# management:
+#   The container health check needs one endpoint. Expose that one. An open
+#   actuator surface is an information disclosure finding waiting to be
+#   written up.
+
+# logging:
+#   Decide the format before there are six services in the stack. Unstructured
+#   lines from six containers are unsearchable by the time anything
+#   interesting happens.
+#
+#   Never log at a level that prints bound statement parameters in a deployed
+#   environment. For this service those parameters are account keys and cash
+#   balances.
