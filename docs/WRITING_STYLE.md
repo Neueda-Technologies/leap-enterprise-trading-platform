@@ -58,7 +58,7 @@ Fixed terms used across the programme, spelled exactly this way:
 | Auth service | The NestJS JWT service | identity service, auth server |
 | Extension | A Sprint 10 team-selected microservice | plugin, add-on, module |
 | Capstone | The whole platform build | project, assignment |
-| Sprint N | The taught week | week N (use week numbers only for folders) |
+| Sprint N | The taught week. Folders are named `sprint-NN-slug`, and calendar weeks appear in prose and tables only | week N as the name of a sprint, week numbers in folder names |
 
 ## Before and after
 
