@@ -2,7 +2,7 @@
 # ship only the JRE and the built jar. The build stage alone is roughly 400 MB with
 # Maven's own dependencies; none of that belongs in the runtime image.
 
-FROM eclipse-temurin:21-jdk-jammy AS build
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /build
 
 # Dependencies first, so a source-only change does not re-download the internet.
