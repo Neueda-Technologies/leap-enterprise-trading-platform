@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -34,6 +35,7 @@ public class QuoteCache {
     private final Duration ttl;
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
 
+    @Autowired
     public QuoteCache(FauxnanceClient fauxnanceClient, FauxnanceProperties properties) {
         this(fauxnanceClient, Clock.systemUTC(), Duration.ofSeconds(properties.quoteCacheTtlSeconds()));
     }
