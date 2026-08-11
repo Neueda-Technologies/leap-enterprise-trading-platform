@@ -476,7 +476,16 @@ else
         while IFS="$(printf '\t')" read -r gen_key gen_spec gen_out; do
             [ -n "${gen_key}" ] || continue
             [ -n "${gen_spec}" ] || continue
-            if ! diff -r -q "${SPRINT_DIR}/${gen_out}" "${FRESH_DIR}/${gen_key}" \
+            # Two of the generator's own bookkeeping files are left out of the
+            # comparison. It refuses to overwrite an .openapi-generator-ignore
+            # that already exists, and then leaves it out of the FILES manifest
+            # it writes beside it, so a client generated into an empty directory
+            # and the same client regenerated in place differ in those two files
+            # and in nothing else. Comparing them would fail every team that
+            # regenerated twice, which is the workflow this check exists to
+            # encourage. Every generated source file is still compared.
+            if ! diff -r -q -x '.openapi-generator-ignore' -x 'FILES' \
+                    "${SPRINT_DIR}/${gen_out}" "${FRESH_DIR}/${gen_key}" \
                     >"${SCRATCH}/diff-${gen_key}" 2>&1; then
                 DRIFT="${DRIFT} ${gen_key}"
             fi
