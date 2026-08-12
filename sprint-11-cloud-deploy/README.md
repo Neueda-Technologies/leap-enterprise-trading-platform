@@ -151,17 +151,16 @@ document, not in a test fixture. The harness searches your working tree for the 
 access key, and it searches the recorded history of this folder as well, because a key that was
 committed and then deleted is still a disclosed key.
 
-**Store the pair where the thing that needs it can read it and nobody else can.** For a workflow,
-that is GitHub Actions secrets, ideally on a protected environment so that a human approves a
-deploy before the credentials are released. Non-secret identifiers, the region, the bucket name
-and the distribution id, are repository variables rather than secrets: treating them as secrets
-only makes the real secrets harder to find. For a local deploy, configure a named AWS CLI
-profile so that the keys live in `~/.aws/credentials` and never in your shell history.
+**Store the pair where the thing that needs it can read it and nobody else can.** Configure a
+named AWS CLI profile so that the keys live in `~/.aws/credentials` and never in your shell
+history, and let the script pick that profile up by name. Non-secret identifiers, the region,
+the bucket name and the distribution id, are arguments or environment variables rather than
+secrets: treating them as secrets only makes the real secrets harder to find.
 
 ## The deployment cycle as a contract
 
-Deployment is one command or one workflow run. Not a sequence of commands in a teammate's shell
-history, not five steps a person executes in order, and not a console upload.
+Deployment is one command. Not a sequence of commands in a teammate's shell history, not five
+steps a person executes in order, and not a console upload.
 
 That single entry point does three things, in this order:
 
@@ -186,10 +185,9 @@ leave the deployment in the same state as running it once, and it has to leave a
 both times. Test that by running it twice and loading the site in between, not by reasoning
 about it.
 
-Whether the entry point is a shell script or a GitHub Actions workflow is your choice. A team
-that builds both should make the workflow call the script, so the two cannot drift apart. The
-runbook builds the script first, because you can run a script the moment you have written it.
-Whichever you build, declare its path in `manifest.env`.
+The entry point is a shell script. The runbook builds it from the commands you have already
+run by hand, because you can run a script the moment you have written it. Declare its path in
+`manifest.env`.
 
 ## Verifying against the deployed front end
 
@@ -250,9 +248,8 @@ scripts/check.sh          the acceptance harness
 ```
 
 Your deployment entry point does not live here. A script belongs at a sensible path in the
-repository, `deploy/deploy-ui.sh` is the one the runbook uses, and a workflow belongs in
-`.github/workflows/`. Whichever you build, name its path in `manifest.env` so the harness finds
-it.
+repository, and `deploy/deploy-ui.sh` is the one the runbook uses. Name its path in
+`manifest.env` so the harness finds it.
 
 ## The harness
 
@@ -294,8 +291,7 @@ something that was not there is not.
 2. The S3 bucket is private and returns access denied when it is addressed directly.
 3. Origin access control is configured. A public bucket policy does not satisfy this, whether or
    not the site loads.
-4. Deployment is a single script or GitHub Actions workflow covering build, upload and
-   invalidation.
+4. Deployment is a single script covering build, upload and invalidation.
 5. The authenticated flows are verified against the deployed front end.
 6. The IAM user or role is scoped to the bucket and the distribution only, and no long-lived key
    is in the repository.

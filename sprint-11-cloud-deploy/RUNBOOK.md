@@ -457,9 +457,9 @@ Paste the key id and the secret at the prompts, set the region to `<REGION>` and
 `aws configure set aws_secret_access_key <value>`: that writes the secret into your shell
 history, where the next person to run `history` finds it.
 
-For a GitHub Actions workflow, add them as repository secrets, on a protected environment if
-your repository has one. The region, the bucket name and the distribution id are repository
-variables, not secrets.
+The region, the bucket name and the distribution id are not secrets. Pass them to the script
+as arguments, or export them in the shell that runs it, so that the real secrets are easy to
+find.
 
 **Success also looks like** a clean run of:
 
@@ -1102,20 +1102,20 @@ entry point, which is criterion 4.
 chmod +x deploy/deploy-ui.sh
 ```
 
-If you would rather the entry point were a GitHub Actions workflow, write the script first and
-have the workflow call it. Two copies of the same three stages drift apart within a week.
+If the script grows past one file, keep one entry point that calls the others. Two copies of
+the same three stages drift apart within a week.
 
 **Success looks like** a script that a member of the team who has not been driving can run,
 unaided, from a clean checkout, with only their AWS profile configured.
 
 **If that is not what happened**
 
-- **The script has a key in it.** Take it out and rotate the key. It goes in the profile or in
-  Actions secrets, and `sprint-11-cloud-deploy/scripts/check.sh` will find it if it stays.
+- **The script has a key in it.** Take it out and rotate the key. It goes in your AWS profile,
+  and `sprint-11-cloud-deploy/scripts/check.sh` will find it if it stays.
 - **The script only works from one directory.** Resolve paths from the script's own location
   rather than from the caller's working directory.
-- **You cannot decide between a script and a workflow.** Write the script. You can run it the
-  moment it exists, which is the point of today.
+- **You cannot decide where the script should live.** Put it at `deploy/deploy-ui.sh`. You can
+  run it the moment it exists, which is the point of today.
 
 ## Step 32. Run it twice
 
@@ -1247,7 +1247,7 @@ the repository has to answer it.
 
 **Do** commit, on a branch, reviewed and merged as usual:
 
-- `deploy/deploy-ui.sh`, and the workflow if you built one.
+- `deploy/deploy-ui.sh`.
 - `deploy/iam/deploy-policy.json`, filled in.
 - `deploy/cloudfront/oac.json`, `distribution.json` and `bucket-policy.json`.
 - `sprint-11-cloud-deploy/manifest.env`, filled in.
