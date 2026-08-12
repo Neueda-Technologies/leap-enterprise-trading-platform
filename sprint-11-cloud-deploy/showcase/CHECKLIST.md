@@ -44,7 +44,7 @@ on decisions and quality, and the rest for questions.
 | 3 | What happened behind that: the API, the topic, the executor, the database | TODO | TODO | TODO |
 | 4 | The analytical side: the pipeline and the insights it answers | TODO | TODO | TODO |
 | 5 | The extension, running on live data | TODO | TODO | TODO |
-| 6 | The deployment: the entry point, and what one run does | TODO | TODO | The script or workflow, and a run |
+| 6 | The deployment: the entry point, and what one run does | TODO | TODO | The script, and a run |
 | 7 | Design decisions: two or three, with what was rejected | TODO | TODO | The decision log |
 | 8 | Copilot: where it helped, where it was wrong, how you knew | TODO | TODO | TODO |
 | 9 | The code-quality story: the gate, the reviews, the tests | TODO | TODO | The SonarQube project |
@@ -99,13 +99,13 @@ or a path for each, and check every one resolves on the morning.
 |---|---|
 | Deployed application | TODO |
 | Repository | TODO |
-| Deployment entry point (script or workflow) | TODO |
+| Deployment entry point (script) | TODO |
 | Most recent deploy run | TODO |
 | SonarQube project and its latest gate result | TODO |
 | Decision log | TODO |
 | Sprint 8 security review | TODO |
 | Sprint 10 security review, with findings and their dispositions | TODO |
-| Test suites and where they run in CI | TODO |
+| Test suites and how they are run | TODO |
 | Backlog or board for Sprint 10 and Sprint 11 | TODO |
 
 ## Teardown

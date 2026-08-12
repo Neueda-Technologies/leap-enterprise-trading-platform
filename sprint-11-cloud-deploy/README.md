@@ -104,9 +104,9 @@ day you are told to, and check it is gone rather than assuming it is.
 
 ## The deployment cycle as a contract
 
-Deployment is one command or one workflow run. Not a sequence of commands in a
-teammate's shell history, not a runbook of five steps that a person executes in
-order, and not a console upload.
+Deployment is one command. Not a sequence of commands in a teammate's shell
+history, not a runbook of five steps that a person executes in order, and not a
+console upload.
 
 That single entry point does three things, in this order:
 
@@ -135,10 +135,9 @@ has to leave a working site both times. That is the property that makes a deploy
 something you can do at four o'clock on a Friday with a panel in the room. Test it
 by running it twice and loading the site in between, not by reasoning about it.
 
-Whether the entry point is a shell script you run locally, or a GitHub Actions
-workflow, is your choice. A team that does both should make the workflow call the
-script, so that the two cannot drift apart. Whichever you build, declare its path
-in `manifest.env`.
+The entry point is a shell script you run locally. A team that splits it across
+more than one file should keep one script that calls the others, so that the
+stages cannot drift apart. Declare its path in `manifest.env`.
 
 ## IAM scoping
 
@@ -183,12 +182,11 @@ the history of this sprint's files, because a key that was committed and then
 deleted is still a disclosed key and still fails the review.
 
 **Store the pair where the thing that needs it can read it and nobody else can.**
-For a workflow, that is GitHub Actions secrets, ideally on a protected
-environment so a human approves a deploy before the credentials are released.
-Non-secret identifiers, the region, the bucket name and the distribution id, are
-repository variables rather than secrets, and treating them as secrets only makes
-the real secrets harder to find. For a local deploy, configure a named AWS CLI
-profile rather than exporting keys into your shell history.
+Configure a named AWS CLI profile rather than exporting keys into your shell
+history, and let the script pick that profile up by name. Non-secret identifiers,
+the region, the bucket name and the distribution id, are arguments or environment
+variables rather than secrets, and treating them as secrets only makes the real
+secrets harder to find.
 
 The AWS CLI command families this week needs are small: `aws s3api` and `aws s3`
 for the bucket and the upload, `aws cloudfront` for the origin access control,
@@ -286,9 +284,8 @@ scripts/check.sh          the acceptance harness
 ```
 
 Your deployment entry point does not live here. A script belongs at a sensible
-path in the repository, `deploy/deploy-ui.sh` is a reasonable one, and a workflow
-belongs in `.github/workflows/`. Whichever you build, name its path in
-`manifest.env` so the harness can find it.
+path in the repository, and `deploy/deploy-ui.sh` is a reasonable one. Name its
+path in `manifest.env` so the harness can find it.
 
 ## The harness
 
@@ -336,8 +333,7 @@ These are the criteria your instructor assesses against.
    directly.
 3. Origin access control is configured. A public bucket policy does not satisfy
    this, whether or not the site loads.
-4. Deployment is a single script or GitHub Actions workflow covering build,
-   upload and invalidation.
+4. Deployment is a single script covering build, upload and invalidation.
 5. The authenticated flows are verified against the deployed front end.
 6. The IAM user or role is scoped to the bucket and the distribution only, and no
    long-lived key is in the repository.

@@ -135,7 +135,7 @@ done
 if [ -n "${OUTSTANDING}" ]; then
     abort "manifest.env is not filled in." \
         "Still empty or set to CHANGE_ME:${OUTSTANDING}" \
-        "DEPLOY_ENTRYPOINT is the path to the one script or workflow that does" \
+        "DEPLOY_ENTRYPOINT is the path to the one script that does" \
         "your deploy. CLOUDFRONT_DOMAIN, BUCKET_NAME and AWS_REGION describe" \
         "what you deployed to, and live mode cannot probe anything without" \
         "them. Every other key ships with a defensible default: set the ones" \
@@ -200,11 +200,10 @@ DEPLOY_FILES=""
 
 if [ ! -f "${ENTRYPOINT_PATH}" ]; then
     fail "No file at ${DEPLOY_ENTRYPOINT}, relative to ${SPRINT_DIR}." \
-        "Criterion 4 is one script or one GitHub Actions workflow covering" \
-        "build, upload and invalidation. Write it, commit it, and name its path" \
-        "in DEPLOY_ENTRYPOINT in manifest.env. A script at the repository root" \
-        "would be ../deploy/deploy-ui.sh; a workflow would be" \
-        "../.github/workflows/deploy-ui.yml." \
+        "Criterion 4 is one script covering build, upload and invalidation." \
+        "Write it, commit it, and name its path in DEPLOY_ENTRYPOINT in" \
+        "manifest.env. A script at the repository root would be" \
+        "../deploy/deploy-ui.sh." \
         "A deploy that is a sequence of commands in somebody's shell history" \
         "does not satisfy this, and it is the thing that fails on the Friday."
 else
@@ -226,15 +225,11 @@ else
         pass "the deployment entry point is ${DEPLOY_ENTRYPOINT}"
     fi
 
-    case "${DEPLOY_ENTRYPOINT}" in
-        *.sh)
-            if [ ! -x "${ENTRYPOINT_PATH}" ]; then
-                note "${DEPLOY_ENTRYPOINT} is not executable. Not a criterion, and"
-                note "still worth fixing: chmod +x it, so that one command is one"
-                note "command rather than one command with bash in front of it."
-            fi
-            ;;
-    esac
+    if [ ! -x "${ENTRYPOINT_PATH}" ]; then
+        note "${DEPLOY_ENTRYPOINT} is not executable. Not a criterion, and still"
+        note "worth fixing: chmod +x it, so that one command is one command"
+        note "rather than one command with bash in front of it."
+    fi
 
     stage_check() {
         stage_label="$1"
@@ -251,9 +246,9 @@ else
                 "${stage_advice}" \
                 "If your deployment does this stage some other way, widen the" \
                 "pattern in manifest.env and be ready to explain it at the" \
-                "review. A workflow that calls a script keeps its stages in two" \
-                "files: name the script in DEPLOY_SUPPORTING_FILES and both are" \
-                "searched."
+                "review. A script that calls a second script keeps its stages" \
+                "in two files: name the second in DEPLOY_SUPPORTING_FILES and" \
+                "both are searched."
         fi
     }
 
