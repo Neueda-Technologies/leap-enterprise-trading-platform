@@ -82,7 +82,7 @@ The correct scope:
 | Messaging | Apache Kafka only. |
 | End-to-end testing | Playwright, Sprint 9. |
 | Unit testing | JUnit 5 for Java, Jest for TypeScript, pytest for Python. |
-| CI | GitHub Actions. |
+| CI | None. Checks and deployment run as scripts. |
 | Quality | SonarQube, Sprint 7. |
 | Containers | Docker and Docker Compose, from Sprint 6. |
 
