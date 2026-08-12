@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from dotenv import load_dotenv
 
 # Loads a local .env file if one is present. Does nothing in an environment
-# where the variables are already set, for example CI or Docker Compose.
+# where the variables are already set, for example Docker Compose.
 load_dotenv()
 
 

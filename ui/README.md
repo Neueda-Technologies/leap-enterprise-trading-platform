@@ -159,8 +159,8 @@ npx @openapitools/openapi-generator-cli generate \
 
 That produces one interface per schema and one injectable client per tag, `OrdersService` and
 `AccountsService`, with the same field names this file declares. The generator needs a Java
-runtime. Add the command to CI so that a contract change breaks the build rather than
-production. Do not edit generated output: regenerate it.
+runtime. Re-run the command whenever the contract changes, so a contract change breaks the
+build in front of you rather than in production. Do not edit generated output: regenerate it.
 
 ## Test
 

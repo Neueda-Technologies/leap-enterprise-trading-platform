@@ -182,7 +182,7 @@ The `Condition` block is what makes this least privilege at the resource level: 
 
 ## Step 6: create the least-privilege deploy user
 
-The deploy automation, `deploy/deploy-ui.sh` and the `deploy-ui.yml` workflow, never uses the broad credentials from the setup above. It uses a separate IAM user scoped to exactly two things: syncing this bucket, and invalidating this distribution.
+The deploy automation, `deploy/deploy-ui.sh`, never uses the broad credentials from the setup above. It uses a separate IAM user scoped to exactly two things: syncing this bucket, and invalidating this distribution.
 
 The policy document is `deploy/iam/deploy-policy.json` in this repository:
 
@@ -237,26 +237,26 @@ Do not delete `deploy-policy.filled.json` before checking it is not tracked by g
 
 ## Step 7: store the deploy credentials
 
-Never commit an access key. Store the pair as GitHub Actions secrets on the repository (or on a `production` environment within it, see the comment in `.github/workflows/deploy-ui.yml`):
-
-| Secret | Value |
-|---|---|
-| `AWS_ACCESS_KEY_ID` | from step 6 |
-| `AWS_SECRET_ACCESS_KEY` | from step 6 |
-
-Store the non-secret identifiers as repository or environment variables, since they are not sensitive on their own:
-
-| Variable | Value |
-|---|---|
-| `AWS_REGION` | the region from the top of this walkthrough |
-| `DEPLOY_BUCKET` | `$BUCKET_NAME` |
-| `DEPLOY_DISTRIBUTION_ID` | the distribution id from step 4 |
-
-For a local, manual deploy, configure a named CLI profile instead of exporting keys into your shell history:
+Never commit an access key. Store the pair in a named AWS CLI profile, which keeps it in your own credentials file rather than in your shell history or in the repository:
 
 ```bash
 aws configure --profile et-platform-deploy
 ```
+
+The profile holds the two secret values from step 6:
+
+| Credential | Value |
+|---|---|
+| `AWS Access Key ID` | from step 6 |
+| `AWS Secret Access Key` | from step 6 |
+
+The remaining identifiers are not sensitive on their own, so pass them to `deploy-ui.sh` as flags, or export them in the shell that runs it:
+
+| Variable | Flag | Value |
+|---|---|---|
+| `AWS_REGION` | `--region` | the region from the top of this walkthrough |
+| `DEPLOY_BUCKET` | `--bucket` | `$BUCKET_NAME` |
+| `DEPLOY_DISTRIBUTION_ID` | `--distribution-id` | the distribution id from step 4 |
 
 ## Step 8: deploy
 
